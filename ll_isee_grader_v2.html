@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lower Level ISEE Practice Test Grader</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+  :root {
+    --navy:#1c1f3a; --navy2:#2a2e52;
+    --brand:#1e5fa8; --brand2:#2e7bc4; --brand-light:#ddeaf8;
+    --accent:#1e5fa8; --accent-light:#ddeaf8;
+    --pink:#9f3f73;
+    --brand-blue:#1e5fa8; --brand-blue-light:#ddeaf8;
+    --cream:#f7f6fb; --cream2:#e4e0f0;
+    --green:#2a7a45; --green-light:#e6f5ec;
+    --red:#c0392b; --red-light:#fdecea;
+    --grey:#8a8a9a; --white:#ffffff;
+    --shadow:0 4px 24px rgba(28,31,58,0.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--cream);color:var(--navy);min-height:100vh;}
+  .header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:28px 40px;display:flex;align-items:center;gap:18px;border-bottom:4px solid var(--brand);}
+  .header h1{font-family:'Libre Baskerville',serif;font-size:24px;font-weight:700;color:var(--white);}
+  .header-sub{font-size:11px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;color:var(--brand2);margin-bottom:4px;}
+  .container{max-width:980px;margin:0 auto;padding:40px 24px 80px;}
+  .card{background:var(--white);border-radius:16px;box-shadow:var(--shadow);padding:32px;margin-bottom:28px;border:1.5px solid var(--cream2);}
+  .card-title{font-family:'Libre Baskerville',serif;font-size:19px;font-weight:700;color:var(--navy);margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--cream2);display:flex;align-items:center;gap:10px;}
+  .step-badge{background:var(--brand);color:var(--white);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;border-radius:20px;padding:3px 12px;}
+  label{font-size:14px;font-weight:500;color:var(--navy2);display:block;margin-bottom:6px;}
+  input[type="text"],input[type="date"]{width:100%;max-width:100%;min-width:0;padding:12px 16px;border:1.5px solid #c8c4de;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:var(--navy);background:var(--cream);outline:none;transition:border-color 0.2s;box-sizing:border-box;-webkit-appearance:none;appearance:none;}
+  input:focus{border-color:var(--brand);background:var(--white);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;min-width:0;}
+  .test-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .test-btn{border:2px solid var(--cream2);background:var(--cream);border-radius:12px;padding:16px 12px;cursor:pointer;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy2);transition:all 0.2s;}
+  .test-btn:hover{border-color:var(--brand);background:var(--brand-light);}
+  .test-btn.selected{border-color:var(--brand);background:var(--brand);color:var(--white);}
+  .test-btn.disabled-btn{opacity:0.45;cursor:not-allowed;pointer-events:none;}
+  .test-icon{font-size:22px;display:block;margin-bottom:6px;}
+  .section-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .section-check{display:flex;align-items:center;gap:12px;border:2px solid var(--cream2);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.2s;user-select:none;}
+  .section-check:hover{border-color:var(--brand);}
+  .section-check.checked{border-color:var(--brand);background:var(--brand-light);}
+  .check-box{width:20px;height:20px;border:2px solid #c0bab0;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;}
+  .section-check.checked .check-box,.full-checked .check-box{background:var(--brand);border-color:var(--brand);}
+  .check-box svg{display:none;}
+  .section-check.checked .check-box svg,.full-checked .check-box svg{display:block;}
+  .section-label{font-size:14px;font-weight:600;color:var(--navy2);}
+  .section-sub-label{font-size:11px;color:var(--grey);margin-top:2px;}
+  .section-count{font-size:12px;color:var(--grey);}
+  .answer-table-wrap{overflow-x:auto;}
+  .answer-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .answer-table th{background:var(--brand);color:var(--white);font-size:12px;font-weight:600;padding:10px 12px;text-align:left;white-space:nowrap;}
+  .answer-table th:first-child{border-radius:8px 0 0 0;}
+  .answer-table th:last-child{border-radius:0 8px 0 0;}
+  .answer-table td{padding:8px 10px;border-bottom:1px solid var(--cream2);vertical-align:middle;}
+  .answer-table tr:last-child td{border-bottom:none;}
+  .answer-table tr:nth-child(even) td{background:#f9f8fd;}
+  .subheader-row td{background:var(--brand-light)!important;font-size:11px;font-weight:700;color:var(--brand);letter-spacing:0.5px;text-transform:uppercase;padding:6px 10px;}
+  .q-num-cell{font-weight:700;color:var(--grey);font-size:13px;width:36px;text-align:center;}
+  .topic-cell{font-size:12px;color:var(--grey);}
+  .ans-select{padding:6px 10px;border:1.5px solid #c8c4de;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;color:var(--navy);background:var(--white);cursor:pointer;outline:none;transition:all 0.2s;min-width:90px;}
+  .ans-select:focus{border-color:var(--brand);}
+  .ans-select.sel-correct{background:var(--green-light);border-color:var(--green);color:var(--green);}
+  .ans-select.sel-wrong{background:var(--red-light);border-color:var(--red);color:var(--red);}
+  .ans-select.sel-skip{background:#f0f0f0;border-color:#aaa;color:#666;}
+  .result-badge{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .result-badge.correct{background:var(--green-light);color:var(--green);}
+  .result-badge.wrong{background:var(--red-light);color:var(--red);}
+  .result-badge.skip{background:#f0f0f0;color:#888;}
+  .section-answers{margin-bottom:32px;}
+  .section-answers-title{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .section-badge{background:var(--cream2);color:var(--navy2);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;}
+  .section-divider{border:none;border-top:2px solid var(--cream2);margin:28px 0;}
+  .btn-primary{background:var(--navy);color:var(--white);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:600;padding:14px 32px;border:none;border-radius:10px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+  .btn-primary:hover{background:var(--navy2);transform:translateY(-1px);}
+  .btn-gold{background:var(--brand);color:var(--white);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:600;padding:14px 32px;border:none;border-radius:10px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+  .btn-gold:hover{background:var(--brand2);}
+  .btn-outline{background:transparent;color:var(--navy);border:2px solid var(--navy);font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:600;padding:12px 28px;border-radius:10px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
+  .btn-outline:hover{background:var(--navy);color:white;}
+  .btn-row-end{display:flex;justify-content:flex-end;gap:12px;margin-top:28px;}
+  #report{display:none;}
+  .report-header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:var(--white);border-left:6px solid var(--brand);}
+  .report-title{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--white);margin-bottom:6px;}
+  .report-sub{font-size:14px;color:var(--brand2);}
+  .report-meta{display:flex;gap:28px;margin-top:18px;flex-wrap:wrap;}
+  .report-meta-item label{font-size:11px;color:#9898cc;text-transform:uppercase;letter-spacing:1px;}
+  .report-meta-item span{font-size:16px;font-weight:600;color:var(--white);display:block;}
+  .score-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .score-table th{background:var(--brand);color:var(--white);font-size:12px;font-weight:600;padding:10px 14px;text-align:left;text-transform:uppercase;letter-spacing:0.5px;}
+  .score-table th:first-child{border-radius:8px 0 0 0;}
+  .score-table th:last-child{border-radius:0 8px 0 0;}
+  .score-table td{padding:10px 14px;border-bottom:1px solid var(--cream2);font-size:14px;}
+  .score-table tr:last-child td{border-bottom:none;}
+  .score-table tr:nth-child(even) td{background:var(--cream);}
+  .correct-mark{color:var(--green);font-weight:700;}
+  .wrong-mark{color:var(--red);font-weight:700;}
+  .skip-mark{color:var(--grey);}
+  .raw-score-row td{background:var(--brand)!important;color:var(--white)!important;font-weight:700;font-size:15px;}
+  .score-summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;}
+  .score-pill{background:var(--white);border:2px solid var(--cream2);border-radius:12px;padding:14px 20px;min-width:130px;}
+  .score-pill .pill-label{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+  .score-pill .pill-score{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;color:var(--navy);}
+  .score-pill .pill-detail{font-size:12px;color:var(--grey);}
+  .feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+  .feedback-box{border-radius:12px;padding:20px;}
+  .feedback-box.good{background:var(--green-light);border:1.5px solid #b5ddc8;}
+  .feedback-box.improve{background:var(--red-light);border:1.5px solid #f0c0c0;}
+  .feedback-box h4{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .feedback-box.good h4{color:var(--green);}
+  .feedback-box.improve h4{color:var(--red);}
+  .feedback-box ul{list-style:none;}
+  .feedback-box ul li{font-size:13px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);color:var(--navy2);}
+  .feedback-box ul li:last-child{border-bottom:none;}
+  .topic-tag{display:inline-block;background:rgba(0,0,0,0.06);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600;margin-right:4px;}
+  .study-section{margin-top:24px;border:2px solid var(--brand);border-radius:14px;overflow:hidden;}
+  .study-section-header{background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);padding:18px 22px;display:flex;align-items:center;gap:12px;}
+  .study-section-header h4{font-family:'Libre Baskerville',serif;font-size:17px;font-weight:700;color:var(--white);}
+  .study-section-header p{font-size:13px;color:#d8c8f4;margin-top:2px;}
+  .study-icon{font-size:28px;}
+  .study-body{padding:22px;background:#faf8fd;}
+  .study-topic-block{margin-bottom:22px;}
+  .study-topic-block:last-child{margin-bottom:0;}
+  .study-topic-name{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .study-topic-name::before{content:'';display:inline-block;width:4px;height:16px;background:var(--brand);border-radius:2px;}
+  .tip-block{background:var(--white);border-left:4px solid var(--brand);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:10px;font-size:13px;color:var(--navy2);line-height:1.6;}
+  .vocab-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px;}
+  .vocab-table th{background:var(--navy);color:var(--white);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+  .vocab-table th:first-child{border-radius:8px 0 0 0;}.vocab-table th:last-child{border-radius:0 8px 0 0;}
+  .vocab-table td{padding:10px 14px;border-bottom:1px solid var(--cream2);vertical-align:top;font-size:13px;}
+  .vocab-table tr:nth-child(even) td{background:#f9f8fd;}
+  .vocab-word{font-weight:700;color:var(--navy);font-size:14px;}
+  .vocab-syn{color:var(--green);font-weight:600;}
+  .vocab-ex{color:var(--grey);font-style:italic;}
+  .topic-tip{background:var(--white);border:1.5px solid var(--cream2);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .topic-tip-name{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;padding-left:12px;border-left:4px solid var(--brand);}
+  .topic-tip-body{font-size:13px;color:var(--navy2);line-height:1.7;margin-top:6px;}
+  .practice-ex{background:var(--brand-light);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:13px;color:var(--navy2);}
+  .hidden{display:none!important;}
+  .note{font-size:12px;color:var(--grey);margin-top:8px;}
+  .sc-tip{background:var(--white);border:1.5px solid var(--cream2);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .sc-sentence{font-size:13px;font-style:italic;color:var(--navy2);margin-bottom:6px;}
+  .sc-answer{font-size:13px;font-weight:700;color:var(--brand);margin-bottom:4px;}
+  .sc-why{font-size:13px;color:var(--navy2);line-height:1.6;}
+  .rc-tip{background:var(--white);border:1.5px solid var(--cream2);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .rc-passage{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--brand);margin-bottom:4px;}
+  .rc-answer{font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;}
+  .rc-why{font-size:13px;color:var(--navy2);line-height:1.6;}
+  .fb-card{background:var(--white);border:1.5px solid var(--cream2);border-radius:10px;padding:16px 20px;margin-bottom:12px;}
+  .fb-label{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px;}
+  .fb-emojis{display:flex;gap:10px;flex-wrap:wrap;}
+  .fb-emoji-btn{background:none;border:2px solid var(--cream2);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:20px;transition:all 0.15s;}
+  .fb-emoji-btn:hover{border-color:var(--brand);background:var(--brand-light);}
+  .fb-emoji-btn.selected{border-color:var(--brand);background:var(--brand);transform:scale(1.1);}
+  .sect-abbr-badge{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;font-weight:700;font-size:13px;color:var(--white);flex-shrink:0;}
+  .badge-VR{background:#5c3d8f;}
+  .badge-QR{background:#2a7a45;}
+  .badge-RC{background:#1a6b8a;}
+  .badge-MA{background:#b84c1a;}
+  .badge-FB{background:#555;}
+  .ai-section{margin-top:24px;border:2px solid var(--brand);border-radius:14px;overflow:hidden;}
+  .ai-section-header{background:linear-gradient(135deg,var(--brand) 0%,var(--brand2) 100%);padding:18px 22px;display:flex;align-items:center;gap:12px;}
+  .ai-section-header h4{font-family:'Libre Baskerville',serif;font-size:17px;font-weight:600;color:var(--white);}
+  .ai-section-header p{font-size:13px;color:#aac4e0;margin-top:2px;}
+  .ai-icon{font-size:28px;}
+  .ai-body{padding:22px;background:#f8fafc;}
+  .ai-loading{display:flex;align-items:center;gap:12px;color:var(--grey);font-size:14px;padding:12px 0;}
+  .spinner{width:20px;height:20px;border:2.5px solid #ddd;border-top-color:var(--brand);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media print{#reportBody>.card{page-break-before:always;}#reportBody>.card:first-child{page-break-before:avoid;}.ai-section{page-break-before:always;}}
+  @media(max-width:640px){
+    .test-grid{grid-template-columns:1fr 1fr;}
+    .feedback-grid{grid-template-columns:1fr;}
+    .form-row{grid-template-columns:1fr;}
+    .section-grid{grid-template-columns:1fr;}
+    .container{padding:20px 14px 60px;}
+    .card{padding:20px 16px;}
+    .header{padding:18px 16px;}
+    .score-summary{gap:10px;}
+    .score-pill{min-width:100px;padding:12px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;"><span style="color:#a8d5b8;font-weight:700;">Wildewood</span> <span style="color:var(--white);">Education</span></div>
+    <h1>Lower Level ISEE <span style="color:var(--white);">Practice Test Grader</span></h1>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STEP 1 -->
+  <div class="card" id="step1">
+    <div class="card-title"><span class="step-badge">Step 1</span> Student Information</div>
+    <div class="form-row">
+      <div><label>Student Name</label><input type="text" id="studentName" placeholder="e.g. Jane Smith"></div>
+      <div><label>Date of Completion</label><input type="date" id="dateCompleted"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card" id="step2">
+    <div class="card-title"><span class="step-badge">Step 2</span> Select Test</div>
+    <div class="test-grid">
+      <button class="test-btn" onclick="selectTest('1')" id="btn-test-1"><span class="test-icon">📝</span>Practice Test 1</button>
+      <button class="test-btn" onclick="selectTest('2')" id="btn-test-2"><span class="test-icon">📝</span>Practice Test 2</button>
+      <button class="test-btn" onclick="selectTest('3')" id="btn-test-3"><span class="test-icon">📝</span>Practice Test 3</button>
+      <button class="test-btn" onclick="selectTest('D')" id="btn-test-D"><span class="test-icon">🔎</span>Diagnostic</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card hidden" id="step3">
+    <div class="card-title"><span class="step-badge">Step 3</span> Select Sections Completed</div>
+    <p class="note" style="margin-bottom:14px;">Select the sections completed. Selecting all four will automatically check "Full Test."</p>
+    <div class="section-grid" id="sectionGrid"></div>
+    <div style="margin-top:12px;padding:14px 16px;border:2px solid var(--cream2);border-radius:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;" id="fullTestRow" onclick="handleFullTestClick()">
+      <div class="check-box" id="fullTestBox">
+        <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="section-label" style="font-weight:600;">Select all sections (Full Test)</div>
+        <div class="section-count">Sections 1, 2, 3, and 4</div>
+      </div>
+    </div>
+    <div class="btn-row-end"><button class="btn-primary" onclick="goToStep4()">Continue →</button></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="card hidden" id="step4">
+    <div class="card-title"><span class="step-badge">Step 4</span> Enter Student Answers</div>
+    <p class="note" style="margin-bottom:18px;">Use the dropdown to select each answer. Rows highlight <span style="color:var(--green);font-weight:600;">green</span> for correct, <span style="color:var(--red);font-weight:600;">red</span> for wrong, and grey for skipped. <strong>Note: The ISEE has no penalty for wrong answers.</strong></p>
+    <div id="answersContainer"></div>
+    <div class="card" style="background:var(--brand-light);border:1.5px solid #b8cfe8;margin-top:8px;padding:22px 24px;">
+      <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:600;color:var(--navy);margin-bottom:14px;">⏱ How Long Did It Take?</div>
+      <p style="font-size:13px;color:var(--grey);margin-bottom:16px;">Enter your completion time for each section below — this will appear on your report so your teacher can track your pacing.</p>
+      <div id="timingInputs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+    </div>
+    <div class="btn-row-end"><button class="btn-primary" onclick="generateReport()">📊 Generate Report</button></div>
+  </div>
+
+  <!-- REPORT -->
+  <div id="report">
+    <div class="report-header">
+      <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;"><span style="color:#a8d5b8;font-weight:700;">Wildewood</span> <span style="color:var(--white);">Education</span></div>
+      <div class="report-title">Score Report</div>
+      <div class="report-sub">Lower Level ISEE — Practice Test</div>
+      <div class="report-meta">
+        <div class="report-meta-item"><label>Student</label><span id="rName">—</span></div>
+        <div class="report-meta-item"><label>Date</label><span id="rDate">—</span></div>
+        <div class="report-meta-item"><label>Test</label><span id="rTest">—</span></div>
+        <div class="report-meta-item" id="rTimingMeta" style="display:none;"><label>Completion Times</label><span id="rTiming" style="font-size:13px;line-height:1.8;">—</span></div>
+      </div>
+    </div>
+    <div id="reportBody"></div>
+    <div class="btn-row-end no-print" style="margin-top:8px;">
+      <button class="btn-outline" onclick="resetAll()">↺ Start Over</button>
+      <button class="btn-gold" onclick="downloadPDF()">⬇ Save as PDF</button>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:24px 0 32px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:#bbb;letter-spacing:0.5px;">
+  Wildewood Education Group LLC
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// LOWER LEVEL ISEE — SECTION DEFINITIONS
+// LL ISEE: VR=34, QR=38, RC=25, MA=30
+// ═══════════════════════════════════════════════════════════════
+const ISEE_SECTIONS = [
+  { num:1, label:'Section 1: Verbal Reasoning',      abbr:'VR', total:34, time:'20 min',
+    subLabel:'Q1–17: Synonyms · Q18–34: Sentence Completion' },
+  { num:2, label:'Section 2: Quantitative Reasoning', abbr:'QR', total:38, time:'35 min',
+    subLabel:'Q1–38: Word Problems & Data Interpretation' },
+  { num:3, label:'Section 3: Reading Comprehension',  abbr:'RC', total:25, time:'25 min',
+    subLabel:'5 passages · 5 questions each' },
+  { num:4, label:'Section 4: Mathematics Achievement',abbr:'MA', total:30, time:'30 min',
+    subLabel:'Q1–30: Multiple Choice' }
+];
+
+// VR split: synonyms end at Q17, sentence completion Q18-34
+const VR_SC_START = { '1':18, '2':18, '3':18, 'D':11 };
+
+const DIAG_SECTIONS = [
+  { num:1, label:'Section 1: Verbal Reasoning',       abbr:'VR', total:15, time:'~12 min',
+    subLabel:'Q1–10: Synonyms · Q11–15: Sentence Completion' },
+  { num:2, label:'Section 2: Quantitative Reasoning', abbr:'QR', total:11, time:'~18 min',
+    subLabel:'Q1–11: Word Problems & Data Interpretation' },
+  { num:3, label:'Section 3: Reading Comprehension',  abbr:'RC', total:15, time:'~18 min',
+    subLabel:'3 passages · 5 questions each' },
+  { num:4, label:'Section 4: Mathematics Achievement',abbr:'MA', total:15, time:'~14 min',
+    subLabel:'Q1–15: Multiple Choice' },
+  { num:5, label:'Diagnostic Feedback',               abbr:'FB', total:3,  time:'',
+    subLabel:'Comfort ratings', isFeedback:true }
+];
+
+function getActiveSections(test) {
+  if (test === 'D') return DIAG_SECTIONS;
+  return ISEE_SECTIONS;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANSWER KEYS
+// Test 1 = Tutorverse Diagnostic (Form A)
+// Test 2 = Ivy Global Lower Level Test 1
+// ═══════════════════════════════════════════════════════════════
+const ANSWER_KEYS = {
+  '1': {
+    // Section 1 — Verbal Reasoning (34 Q: Q1-17 Synonyms, Q18-34 SC)
+    1: { answers:['C','B','B','B','B','D','C','D','C','C','B','B','A','D','A','D','D','C','B','C','B','C','A','D','A','A','B','C','B','D','D','C','B','D'],
+         topics:[
+           'Synonym (DIFFERENT/varying)','Synonym (PREVENT/avoid)','Synonym (FREQUENT/often)',
+           'Synonym (ERUPT/burst)','Synonym (DEBATE/discuss)','Synonym (SCARCE/uncommon)',
+           'Synonym (AMBITION/motivation)','Synonym (INDICATE/suggest)','Synonym (CEASE/stop)',
+           'Synonym (ADHERE/stick)','Synonym (DISCHARGE/liberate)','Synonym (ABATE/decrease)',
+           'Synonym (HEARTY/cheerful)','Synonym (QUENCH/satisfy)','Synonym (ABNORMAL/odd)',
+           'Synonym (BOYCOTT/reject)','Synonym (FLOURISH/prosper)',
+           'Sentence Completion (guardian)','Sentence Completion (impartial)',
+           'Sentence Completion (hazy)','Sentence Completion (tangible)',
+           'Sentence Completion (reinforce)','Sentence Completion (equivalent)',
+           'Sentence Completion (retrieve)','Sentence Completion (aroma)',
+           'Sentence Completion (approximate)','Sentence Completion (immigrate)',
+           'Sentence Completion (luxurious)','Sentence Completion (wanted a good grade)',
+           'Sentence Completion (became sicker)','Sentence Completion (greets all 200 campers)',
+           'Sentence Completion (shared money with charities)',
+           'Sentence Completion (did not enjoy cooking)',
+           'Sentence Completion (concentrated in specific types)'
+         ]},
+    // Section 2 — Quantitative Reasoning (38 Q)
+    2: { answers:['C','D','B','D','D','A','A','A','B','C','D','D','B','D','D','B','C','C','D','C','B','C','C','C','A','C','A','C','B','D','C','B','C','D','A','D','C','B'],
+         topics:[
+           'Data Interpretation (Tables)','Arithmetic (Order of Operations)',
+           'Number Sense (Number Lines)','Algebra (Word Problems)',
+           'Geometry (Perimeter)','Number Sense (Patterns & Sequences)',
+           'Algebra (Word Problems)','Geometry (Quadrilaterals)',
+           'Geometry (Area)','Algebra (Word Problems)',
+           'Geometry (Perimeter)','Algebra (Variables & Equations)',
+           'Estimation','Geometry (Volume)',
+           'Rates & Ratios (Speed & Time)','Data Interpretation (Tables)',
+           'Data Interpretation (Circle Graphs)','Statistics (Range)',
+           'Geometry (Perimeter)','Data Interpretation (Bar Graphs)',
+           'Probability','Probability',
+           'Statistics (Median)','Algebra (Mean & Average)',
+           'Coordinate Geometry','Number Sense (Patterns & Sequences)',
+           'Geometry (Perimeter)','Number Sense (Fractions)',
+           'Algebra (Solving Equations)','Data Interpretation (Venn Diagrams)',
+           'Number Sense (Fractions)','Algebra (Solving Equations)',
+           'Algebra (Word Problems)','Number Sense (Patterns & Sequences)',
+           'Arithmetic (Properties)','Algebra (Function Rules)',
+           'Number Sense (Number Lines)','Estimation'
+         ]},
+    // Section 3 — Reading Comprehension (25 Q: 5 passages x 5 Q)
+    3: { answers:['D','D','C','C','B','C','D','C','A','A','C','B','D','C','B','D','A','B','A','D','B','C','B','C','D'],
+         topics:[
+           "Main Idea & Author's Purpose","Vocabulary in Context","Evidence & Supporting Details",
+           "Tone & Attitude","Evidence & Supporting Details",
+           "Main Idea & Author's Purpose","Inference","Evidence & Supporting Details",
+           "Inference","Vocabulary in Context",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Tone & Attitude","Evidence & Supporting Details","Vocabulary in Context",
+           "Main Idea & Author's Purpose","Tone & Attitude","Evidence & Supporting Details",
+           "Inference","Inference",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Inference","Evidence & Supporting Details","Vocabulary in Context"
+         ]},
+    // Section 4 — Mathematics Achievement (30 Q)
+    4: { answers:['C','A','A','D','C','C','A','C','C','D','A','A','D','D','B','D','C','D','B','A','D','B','B','B','D','B','A','A','B','C'],
+         topics:[
+           'Arithmetic (Fractions)','Coordinate Geometry',
+           'Arithmetic (Properties)','Algebra (Writing Equations)',
+           'Estimation','Number Theory (Divisibility)',
+           'Geometry (Symmetry)','Probability',
+           'Arithmetic (Multiplication)','Arithmetic (Decimals)',
+           'Arithmetic (Addition)','Geometry (Area)',
+           'Data Interpretation (Pictographs)','Number Sense (Percentages)',
+           'Geometry (Perimeter)','Arithmetic (Order of Operations)',
+           'Number Sense (Place Value)','Geometry (Volume)',
+           'Arithmetic (Division)','Algebra (Writing Equations)',
+           'Arithmetic (Order of Operations)','Arithmetic (Decimals)',
+           'Algebra (Function Rules)','Rates & Ratios (Measurement)',
+           'Number Sense (Patterns & Sequences)','Rates & Ratios (Time)',
+           'Data Interpretation (Tables)','Rates & Ratios (Proportions)',
+           'Geometry (Spatial Reasoning)','Statistics (Range)'
+         ]}
+  },
+  '2': {
+    // Section 1 — Verbal Reasoning (34 Q: Q1-17 Synonyms, Q18-34 SC)
+    1: { answers:['C','C','D','C','A','D','B','D','A','D','A','D','D','A','A','B','C','C','A','D','D','B','A','C','A','B','B','D','C','A','B','B','C','A'],
+         topics:[
+           'Synonym (DENIAL/rejection)','Synonym (SIMPLE/plain)','Synonym (QUAKE/shake)',
+           'Synonym (SIGNAL/indicate)','Synonym (AUTHORIZE/approve)','Synonym (YIELD/surrender)',
+           'Synonym (HERALD/announce)','Synonym (TRUCE/ceasefire)','Synonym (SEVERITY/harshness)',
+           'Synonym (SAGE/wise)','Synonym (RESTRAINT/reserve)','Synonym (WARBLE/sing)',
+           'Synonym (RECOIL/withdraw)','Synonym (ENVELOP/enclose)','Synonym (CREED/belief)',
+           'Synonym (IMMUNITY/resistance)','Synonym (FORLORN/lonely)',
+           'Sentence Completion (ideal)','Sentence Completion (salvage)',
+           'Sentence Completion (encounter)','Sentence Completion (favorable)',
+           'Sentence Completion (authentic)','Sentence Completion (thrilled)',
+           'Sentence Completion (variety)','Sentence Completion (prominence)',
+           'Sentence Completion (relieved)','Sentence Completion (religious)',
+           'Sentence Completion (harvested)','Sentence Completion (he only ate spinach)',
+           'Sentence Completion (recognized real events)',
+           'Sentence Completion (successfully performed the operation)',
+           'Sentence Completion (fell ill and was unable to perform)',
+           'Sentence Completion (far more abstract and experimental)',
+           'Sentence Completion (researchers initially thought it was a planet)'
+         ]},
+    // Section 2 — Quantitative Reasoning (38 Q)
+    2: { answers:['D','D','B','A','C','B','D','D','A','C','D','A','C','C','B','B','A','B','D','B','A','C','D','C','B','B','C','B','C','B','B','D','A','C','A','C','B','C'],
+         topics:[
+           'Number Sense (Fractions)','Arithmetic (Division)',
+           'Data Interpretation (Tables)','Algebra (Word Problems)',
+           'Number Sense (Number Lines)','Number Sense (Fractions)',
+           'Algebra (Writing Equations)','Number Sense (Patterns & Sequences)',
+           'Rates & Ratios (Speed & Time)','Number Theory (Prime Numbers)',
+           'Data Interpretation (Circle Graphs)','Geometry (Area/Triangle)',
+           'Algebra (Systems of Equations)','Geometry (Spatial Reasoning)',
+           'Number Theory (Divisibility)','Probability',
+           'Geometry (Symmetry)','Data Interpretation (Venn Diagrams)',
+           'Data Interpretation (Tables)','Algebra (Function Rules)',
+           'Statistics (Mean)','Geometry (Perimeter)',
+           'Geometry (Line Segments)','Algebra (Systems of Equations)',
+           'Geometry (Perimeter)','Arithmetic (Order of Operations)',
+           'Estimation','Geometry (Volume)',
+           'Algebra (Word Problems)','Arithmetic (Fractions)',
+           'Rates & Ratios (Scale & Ratios)','Geometry (Quadrilaterals)',
+           'Estimation','Geometry (Area)',
+           'Number Sense (Number Lines)','Data Interpretation (Bar Graphs)',
+           'Geometry (Perimeter)','Probability'
+         ]},
+    // Section 3 — Reading Comprehension (25 Q: 5 passages x 5 Q)
+    3: { answers:['D','B','D','D','A','C','C','A','D','A','C','C','D','D','A','D','B','C','B','D','B','A','B','C','D'],
+         topics:[
+           "Main Idea & Author's Purpose","Vocabulary in Context","Tone & Attitude",
+           "Inference","Evidence & Supporting Details",
+           "Main Idea & Author's Purpose","Inference","Evidence & Supporting Details",
+           "Inference","Vocabulary in Context",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Tone & Attitude","Inference","Vocabulary in Context",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Inference","Evidence & Supporting Details","Inference",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Inference","Evidence & Supporting Details","Vocabulary in Context"
+         ]},
+    // Section 4 — Mathematics Achievement (30 Q)
+    4: { answers:['D','C','B','B','C','C','D','C','C','B','C','C','D','C','D','D','D','B','C','D','C','C','A','C','C','D','B','D','D','C'],
+         topics:[
+           'Arithmetic (Order of Operations)','Arithmetic (Money)',
+           'Statistics (Mean)','Probability',
+           'Data Interpretation (Line Graphs)','Algebra (Properties)',
+           'Geometry (3D Figures)','Geometry (Area)',
+           'Arithmetic (Fractions)','Geometry (Quadrilaterals)',
+           'Number Sense (Fractions & Decimals)','Algebra (Word Problems)',
+           'Geometry (Area/Triangle)','Number Sense (Place Value)',
+           'Estimation','Statistics (Range)',
+           'Number Sense (Patterns & Sequences)','Coordinate Geometry',
+           'Number Sense (Number Lines)','Algebra (Solving Equations)',
+           'Geometry (Perimeter)','Arithmetic (Addition)',
+           'Number Sense (Fractions)','Data Interpretation (Pictographs)',
+           'Number Sense (Fractions)','Arithmetic (Multiplication)',
+           'Number Theory (Prime Numbers)','Arithmetic (Decimals)',
+           'Arithmetic (Decimals)','Data Interpretation (Tables)'
+         ]}
+  },
+  
+  // ── Test 3 = Ivy Global Lower Level Test 2 ──────────────────────────
+  '3': {
+    // Section 1 — Verbal Reasoning (34 Q: Q1-17 Synonyms, Q18-34 SC)
+    1: { answers:['B','C','B','C','A','B','D','B','C','D','A','C','B','C','C','B','C','B','C','D','A','A','C','D','A','D','A','D','B','A','B','B','D','C'],
+         topics:[
+           'Synonym (VOLUNTEER/offer)','Synonym (SYNCHRONIZE/coordinate)','Synonym (MOURN/lament)',
+           'Synonym (GLISTEN/sparkle)','Synonym (RELENTLESS/insistent)','Synonym (BRAND/mark)',
+           'Synonym (RENDITION/version)','Synonym (COMMONPLACE/ordinary)','Synonym (HOIST/lift)',
+           'Synonym (HEAP/pile)','Synonym (SOW/pig)','Synonym (GLEE/joy)',
+           'Synonym (LINGER/delay)','Synonym (ADMIRE/adore)','Synonym (PERSECUTE/oppress)',
+           'Synonym (SKEPTICAL/doubtful)','Synonym (COUNSEL/advice)',
+           'Sentence Completion (dismayed)','Sentence Completion (aggressive)',
+           'Sentence Completion (timid)','Sentence Completion (attract)',
+           'Sentence Completion (hesitant)','Sentence Completion (refrain)',
+           'Sentence Completion (loyal)','Sentence Completion (despicable)',
+           'Sentence Completion (skittish)','Sentence Completion (ecstatic)',
+           'Sentence Completion (diversity)','Sentence Completion (world traveler)',
+           'Sentence Completion (flavorful dishes)','Sentence Completion (grade not as high)',
+           'Sentence Completion (not talented players)','Sentence Completion (out of town)',
+           'Sentence Completion (financial difficulties)'
+         ]},
+    // Section 2 — Quantitative Reasoning (38 Q)
+    2: { answers:['B','C','A','D','D','B','B','D','B','A','B','A','C','B','D','C','A','B','B','D','A','D','C','B','C','C','A','B','C','C','C','B','B','A','B','D','C','A'],
+         topics:[
+           'Algebra (Word Problems)','Geometry (Quadrilaterals)','Geometry (Spatial Reasoning)',
+           'Number Theory (Divisibility)','Algebra (Properties)','Data Interpretation (Venn Diagrams)',
+           'Data Interpretation (Circle Graphs)','Number Sense (Patterns & Sequences)',
+           'Arithmetic (Fractions)','Estimation','Geometry (Volume)',
+           'Algebra (Writing Equations)','Data Interpretation (Bar Graphs)',
+           'Estimation','Algebra (Variables & Equations)',
+           'Number Sense (Number Lines)','Geometry (Perimeter)',
+           'Coordinate Geometry','Rates & Ratios (Speed & Time)',
+           'Rates & Ratios (Proportions)','Algebra (Solving Equations)',
+           'Number Sense (Patterns & Sequences)','Number Sense (Fractions & Decimals)',
+           'Rates & Ratios (Scale & Ratios)','Geometry (Perimeter)',
+           'Number Theory (Prime Numbers)','Algebra (Function Rules)',
+           'Geometry (Symmetry)','Algebra (Systems of Equations)',
+           'Statistics (Mean)','Probability','Statistics (Mean)',
+           'Number Theory (Divisibility)','Algebra (Word Problems)',
+           'Probability','Geometry (Area/Triangle)',
+           'Probability','Arithmetic (Fractions)'
+         ]},
+    // Section 3 — Reading Comprehension (25 Q: 5 passages x 5 Q)
+    3: { answers:['A','C','D','A','B','D','A','C','C','D','A','C','C','D','B','B','B','A','B','D','A','C','B','D','D'],
+         topics:[
+           "Vocabulary in Context","Main Idea & Author's Purpose","Evidence & Supporting Details",
+           "Inference","Text Structure",
+           "Main Idea & Author's Purpose","Evidence & Supporting Details","Inference",
+           "Evidence & Supporting Details","Inference",
+           "Evidence & Supporting Details","Text Structure","Tone & Attitude",
+           "Evidence & Supporting Details","Vocabulary in Context",
+           "Inference","Vocabulary in Context","Main Idea & Author's Purpose",
+           "Tone & Attitude","Text Structure",
+           "Evidence & Supporting Details","Main Idea & Author's Purpose",
+           "Vocabulary in Context","Inference","Tone & Attitude"
+         ]},
+    // Section 4 — Mathematics Achievement (30 Q)
+    4: { answers:['D','C','B','D','B','C','C','C','B','B','B','A','C','C','A','C','C','A','C','B','B','C','A','B','D','B','C','D','C','A'],
+         topics:[
+           'Geometry (Quadrilaterals)','Probability','Data Interpretation (Line Graphs)',
+           'Geometry (Perimeter)','Number Sense (Number Lines)','Data Interpretation (Pictographs)',
+           'Algebra (Word Problems)','Coordinate Geometry','Algebra (Systems of Equations)',
+           'Coordinate Geometry','Arithmetic (Fractions)','Arithmetic (Order of Operations)',
+           'Rates & Ratios (Scale & Ratios)','Number Sense (Place Value)',
+           'Number Sense (Fractions)','Data Interpretation (Tables)',
+           'Number Sense (Fractions & Decimals)','Arithmetic (Order of Operations)',
+           'Arithmetic (Fractions)','Arithmetic (Addition)',
+           'Statistics (Median)','Number Sense (Patterns & Sequences)',
+           'Estimation','Number Sense (Patterns & Sequences)',
+           'Number Sense (Fractions)','Algebra (Solving Equations)',
+           'Arithmetic (Fractions)','Geometry (Perimeter)',
+           'Probability','Algebra (Writing Equations)'
+         ]}
+  },
+
+  // ── Diagnostic = LL ISEE Diagnostic Assessment ──────────────────────────
+  'D': {
+    // Section 1 — Verbal Reasoning (15 Q: Q1-10 Synonyms, Q11-15 SC)
+    1: { answers:['B','A','D','C','A','D','C','B','A','D','B','C','D','A','C'],
+         topics:[
+           'Synonym (VIBRANT/lively)','Synonym (ADEQUATE/sufficient)','Synonym (HOSTILE/aggressive)',
+           'Synonym (VACANT/empty)','Synonym (PRECISE/exact)','Synonym (DEMOLISH/destroy)',
+           'Synonym (CAUTIOUS/careful)','Synonym (TRANQUIL/peaceful)','Synonym (FEEBLE/weak)',
+           'Synonym (GRATITUDE/thankfulness)',
+           'Sentence Completion (groundbreaking)','Sentence Completion (overwhelmed)',
+           'Sentence Completion (pinch)','Sentence Completion (confused)',
+           'Sentence Completion (under construction)'
+         ]},
+    // Section 2 — Quantitative Reasoning (11 Q)
+    2: { answers:['D','A','C','B','D','C','A','D','A','C','D'],
+         topics:[
+           'Probability','Number Sense (Fractions & Decimals)',
+           'Rates & Ratios (Speed & Time)','Statistics (Median)',
+           'Geometry (Perimeter)','Algebra (Word Problems)',
+           'Arithmetic (Order of Operations)','Number Sense (Patterns & Sequences)',
+           'Number Theory (Divisibility)','Geometry (Area)',
+           'Algebra (Solving Equations)'
+         ]},
+    // Section 3 — Reading Comprehension (15 Q: 3 passages x 5 Q)
+    3: { answers:['C','D','B','A','D','B','D','A','C','B','A','C','D','B','A'],
+         topics:[
+           "Main Idea & Author's Purpose","Evidence & Supporting Details","Vocabulary in Context",
+           "Inference","Tone & Attitude",
+           "Main Idea & Author's Purpose","Author's Purpose for a Detail","Evidence & Supporting Details",
+           "Inference","Vocabulary in Context",
+           "Inference","Evidence & Supporting Details","Author's Purpose for a Detail",
+           "Inference","Tone & Attitude"
+         ]},
+    // Section 4 — Mathematics Achievement (15 Q)
+    4: { answers:['B','D','C','A','D','A','C','B','D','C','A','D','C','A','B'],
+         topics:[
+           'Arithmetic (Order of Operations)','Arithmetic (Money)',
+           'Arithmetic (Fractions)','Number Sense (Number Lines)',
+           'Geometry (Area)','Number Theory (Prime Numbers)',
+           'Arithmetic (Fractions)','Coordinate Geometry',
+           'Statistics (Range)','Arithmetic (Fractions)',
+           'Number Sense (Percentages)','Arithmetic (Order of Operations)',
+           'Geometry (Volume)','Statistics (Median)',
+           'Geometry (Area)'
+         ]},
+    // Section 5 — Diagnostic Feedback (comfort ratings — no answers to grade)
+    5: { isFeedback:true, answers:[], topics:[] }
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// VOCAB DATA — synonyms for VR study tips
+// ═══════════════════════════════════════════════════════════════
+const VOCAB_DATA = {
+  '1': {
+    1:{w:'DIFFERENT',d:'Not the same as another; unlike in nature or quality.',s:'varying, distinct, unlike',e:'"The results were different from what anyone had expected."'},
+    2:{w:'PREVENT',d:'To keep something from happening; to stop something before it occurs.',s:'avoid, stop, block',e:'"A good warm-up can help prevent injuries during exercise."'},
+    3:{w:'FREQUENT',d:'Occurring or done many times at short intervals; happening often.',s:'often, common, regular',e:'"She made frequent trips to the library every week."'},
+    4:{w:'ERUPT',d:'To suddenly begin with force or violence; to burst out suddenly.',s:'burst, explode, eject',e:'"The volcano erupted without warning, sending ash miles into the air."'},
+    5:{w:'DEBATE',d:'To discuss or argue about a subject formally; to consider the pros and cons.',s:'discuss, argue, deliberate',e:'"The students debated whether homework should be abolished."'},
+    6:{w:'SCARCE',d:'Occurring in small numbers; not enough to meet the demand.',s:'uncommon, rare, insufficient',e:'"Clean water is scarce in parts of the desert."'},
+    7:{w:'AMBITION',d:'A strong desire to achieve something requiring determination and hard work.',s:'motivation, drive, aspiration',e:'"Her ambition to become a doctor never wavered."'},
+    8:{w:'INDICATE',d:'To point out or show; to be a sign or symptom of something.',s:'suggest, signal, show',e:'"Dark clouds indicate that a storm may be coming."'},
+    9:{w:'CEASE',d:'To come or bring to an end; to stop doing something.',s:'stop, halt, end',e:'"The rain finally ceased after three days."'},
+    10:{w:'ADHERE',d:'To stick firmly to a surface; to follow or conform to a rule.',s:'stick, cling, follow',e:'"Please adhere to the school\'s dress code at all times."'},
+    11:{w:'DISCHARGE',d:'To release or send out; to set free from duty or confinement.',s:'liberate, release, emit',e:'"The hospital will discharge the patient once she recovers."'},
+    12:{w:'ABATE',d:'To become less intense or widespread; to diminish or reduce.',s:'decrease, lessen, reduce',e:'"The storm slowly abated as it moved out to sea."'},
+    13:{w:'HEARTY',d:'Vigorous and cheerful; enthusiastic and warm.',s:'cheerful, enthusiastic, warm',e:'"He gave a hearty laugh at the funny joke."'},
+    14:{w:'QUENCH',d:'To satisfy a desire or need; to extinguish or put out.',s:'satisfy, extinguish, relieve',e:'"A cold glass of water quenched her thirst after the long run."'},
+    15:{w:'ABNORMAL',d:'Deviating from what is normal or expected; unusual or strange.',s:'odd, unusual, irregular',e:'"The test results showed abnormal cell growth."'},
+    16:{w:'BOYCOTT',d:'To withdraw from and refuse to deal with as a form of protest.',s:'reject, refuse, shun',e:'"Shoppers boycotted the store to protest its policies."'},
+    17:{w:'FLOURISH',d:'To grow or develop in a healthy or vigorous way; to thrive and prosper.',s:'prosper, thrive, bloom',e:'"The garden really began to flourish after the rain."'}
+  },
+  '2': {
+    1:{w:'DENIAL',d:'A refusal to accept or admit something; a declaration that something is untrue.',s:'rejection, refusal, contradiction',e:'"His denial of wrongdoing surprised everyone who had seen the evidence."'},
+    2:{w:'SIMPLE',d:'Easy to understand or do; not complicated or elaborate; plain and basic.',s:'plain, easy, basic',e:'"The recipe was simple enough for a beginner to follow."'},
+    3:{w:'QUAKE',d:'To tremble or shake, especially from cold, fear, or excitement.',s:'shake, tremble, shudder',e:'"The ground began to quake just before the earthquake struck."'},
+    4:{w:'SIGNAL',d:'A gesture, action, or sound used to convey information or instructions.',s:'indicate, show, communicate',e:'"She raised her hand to signal that she needed help."'},
+    5:{w:'AUTHORIZE',d:'To give official permission for something; to approve or sanction.',s:'approve, permit, sanction',e:'"The principal authorized the field trip after reviewing the plans."'},
+    6:{w:'YIELD',d:'To produce or provide a natural result; to give way or surrender.',s:'surrender, produce, give',e:'"The farmer expected the fields to yield a large crop this year."'},
+    7:{w:'HERALD',d:'To announce or signal the approach of something; a person or thing that forewarns.',s:'announce, proclaim, signal',e:'"The crocus is often seen as a herald of spring."'},
+    8:{w:'TRUCE',d:'An agreement between enemies or opponents to stop fighting for a time.',s:'ceasefire, peace agreement, armistice',e:'"The two countries agreed to a truce to allow negotiations."'},
+    9:{w:'SEVERITY',d:'The fact or condition of being serious or extreme; harshness.',s:'harshness, intensity, seriousness',e:'"The doctor was concerned about the severity of the patient\'s symptoms."'},
+    10:{w:'SAGE',d:'Having wisdom, especially in difficult situations; a profoundly wise person.',s:'wise, learned, experienced',e:'"The sage advisor warned the king not to go to war."'},
+    11:{w:'RESTRAINT',d:'A measure that limits or controls something; self-control.',s:'reserve, self-control, moderation',e:'"She showed great restraint by not reacting angrily."'},
+    12:{w:'WARBLE',d:'To sing in a gentle, trilling manner; to sing with trills.',s:'sing, trill, chirp',e:'"Birds began to warble outside the window every morning."'},
+    13:{w:'RECOIL',d:'To suddenly move back in fear or disgust; to spring back from impact.',s:'withdraw, flinch, draw back',e:'"She recoiled in shock when she saw the spider."'},
+    14:{w:'ENVELOP',d:'To wrap up, cover, or surround completely.',s:'enclose, surround, cover',e:'"Thick fog enveloped the city, making it hard to see."'},
+    15:{w:'CREED',d:'A formal statement of religious belief; a guiding principle or set of beliefs.',s:'belief, doctrine, faith',e:'"The school\'s creed emphasized honesty and respect."'},
+    16:{w:'IMMUNITY',d:'The ability to resist a particular infection; protection from something.',s:'resistance, protection, exemption',e:'"Some people have natural immunity to certain diseases."'},
+    17:{w:'FORLORN',d:'Pitifully sad and abandoned; appearing sad because of isolation.',s:'lonely, abandoned, sad',e:'"The forlorn puppy sat by the gate waiting for its owner."'}
+  }
+,
+  '3': {
+    1:{w:'VOLUNTEER',d:'To freely offer to do something without being asked or paid.',s:'offer, give, donate',e:'"She volunteered to help clean up after the school event."'},
+    2:{w:'SYNCHRONIZE',d:'To cause to happen at the same time or rate; to coordinate timing.',s:'coordinate, align, match',e:'"The swimmers synchronized their movements to perform as one."'},
+    3:{w:'MOURN',d:'To feel or express deep sadness, especially after a loss.',s:'lament, grieve, sorrow',e:'"The whole town mourned the loss of the beloved teacher."'},
+    4:{w:'GLISTEN',d:'To shine with a sparkling light, especially when wet.',s:'sparkle, shine, gleam',e:'"The morning dew made the grass glisten in the sunlight."'},
+    5:{w:'RELENTLESS',d:'Unceasingly intense; showing no signs of easing off; persistent.',s:'insistent, persistent, unstoppable',e:'"The relentless rain continued for three days without pause."'},
+    6:{w:'BRAND',d:'A mark or label that identifies a product or company; to mark something distinctively.',s:'mark, label, trademark',e:'"The cattle were branded with the ranch owner\'s symbol."'},
+    7:{w:'RENDITION',d:'A performance or interpretation of something; a version of a song or piece.',s:'version, interpretation, performance',e:'"Her rendition of the national anthem moved the crowd to tears."'},
+    8:{w:'COMMONPLACE',d:'Not unusual; found everywhere; completely ordinary.',s:'ordinary, everyday, typical',e:'"It is commonplace to see people using smartphones in public."'},
+    9:{w:'HOIST',d:'To raise or lift something up, especially with ropes or machinery.',s:'lift, raise, heave',e:'"The workers hoisted the heavy beam into place with a crane."'},
+    10:{w:'HEAP',d:'A large, untidy pile of things; to put things into a large pile.',s:'pile, mound, stack',e:'"There was a heap of laundry waiting to be folded."'},
+    11:{w:'SOW',d:'A female adult pig; also, to plant seeds in the ground.',s:'pig, female pig, plant',e:'"The farmer watched the sow nurse her piglets in the barn."'},
+    12:{w:'GLEE',d:'Great delight or happiness, especially with childlike enthusiasm.',s:'joy, delight, happiness',e:'"The children squealed with glee when they saw the playground."'},
+    13:{w:'LINGER',d:'To be slow to leave; to remain somewhere longer than expected.',s:'delay, stay, loiter',e:'"After dinner, the guests lingered on the porch to watch the sunset."'},
+    14:{w:'ADMIRE',d:'To regard with respect, approval, or pleasure; to look at with appreciation.',s:'adore, respect, appreciate',e:'"She admired her grandmother\'s courage and determination."'},
+    15:{w:'PERSECUTE',d:'To treat someone cruelly or unfairly, especially because of their beliefs.',s:'oppress, torment, harass',e:'"Minorities were persecuted for practicing their religion."'},
+    16:{w:'SKEPTICAL',d:'Not easily convinced; having doubts or reservations about something.',s:'doubtful, uncertain, suspicious',e:'"She was skeptical about the new product\'s claims."'},
+    17:{w:'COUNSEL',d:'Advice given formally; to give advice or guidance to someone.',s:'advice, guidance, recommendation',e:'"The lawyer offered counsel to help the family understand the situation."'}
+  }
+
+,
+  'D': {
+    1:{w:'VIBRANT',d:'Full of energy, brightness, and life; vivid and lively.',s:'lively, vivid, energetic',e:'"The garden was vibrant with color after the spring rain."'},
+    2:{w:'ADEQUATE',d:'Satisfactory or acceptable in quality or quantity; enough for a purpose.',s:'sufficient, acceptable, enough',e:'"The food supply was adequate to last through the winter."'},
+    3:{w:'HOSTILE',d:'Showing or feeling opposition or dislike; unfriendly and aggressive.',s:'aggressive, antagonistic, combative',e:'"The hostile crowd booed the speaker off the stage."'},
+    4:{w:'VACANT',d:'Not occupied or in use; empty of people or contents.',s:'empty, unoccupied, bare',e:'"The office sat vacant over the holiday weekend."'},
+    5:{w:'PRECISE',d:'Marked by exactness and accuracy; sharply defined or stated.',s:'exact, accurate, specific',e:'"The surgeon made a precise incision exactly where needed."'},
+    6:{w:'DEMOLISH',d:'To pull or knock down a structure completely; to destroy something.',s:'destroy, tear down, level',e:'"The old factory was demolished to make room for a park."'},
+    7:{w:'CAUTIOUS',d:'Careful to avoid potential problems or danger; not taking risks.',s:'careful, wary, guarded',e:'"She was cautious crossing the icy bridge in the dark."'},
+    8:{w:'TRANQUIL',d:'Free from disturbance; calm and peaceful.',s:'peaceful, calm, serene',e:'"The lake was tranquil at dawn before the swimmers arrived."'},
+    9:{w:'FEEBLE',d:'Lacking physical or mental strength; weak and frail.',s:'weak, frail, fragile',e:'"After three days without food, the hiker felt feeble and dizzy."'},
+    10:{w:'GRATITUDE',d:'The quality of being thankful; readiness to show appreciation.',s:'thankfulness, appreciation, gratefulness',e:'"She expressed gratitude to everyone who helped during the emergency."'}
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SENTENCE COMPLETION DATA
+// ═══════════════════════════════════════════════════════════════
+const SC_DATA = {
+  '1': {
+    18:{sentence:'A(n) ________ has a responsibility to protect a person, place, object, or even an idea.',correct:'(C) guardian',why:'The blank describes someone whose role is to protect — a guardian. "Article" is an object, not a person. "Fantasy" is an imaginary idea. "Thief" is the opposite of a protector.'},
+    19:{sentence:'Because the contestant was the game show judge\'s son, many believed that she could not remain ________ when deciding a winner.',correct:'(B) impartial',why:'"Although" signals a contrast — people doubted her fairness. Impartial = fair and unbiased. "Encouraged" and "unable" don\'t describe a judge\'s neutrality. "Unfair" is a negative quality she was suspected of, not what she should "remain."'},
+    20:{sentence:'Without his glasses, Blake\'s ________ vision made it hard for him to safely drive a car.',correct:'(C) hazy',why:'Poor vision that makes driving unsafe = hazy (blurry, not clear). "Bright" and "broad" describe good vision. "Serious" describes a situation, not vision quality.'},
+    21:{sentence:'Things that can be touched are said to be ________, or concrete.',correct:'(B) tangible',why:'"Concrete" is a clue — something physically touchable = tangible. "Curious" = interesting. "Theoretical" = not physical — the opposite. "Unnatural" doesn\'t mean touchable.'},
+    22:{sentence:'The metal beams were meant to ________ the building, strengthening it against future storms.',correct:'(C) reinforce',why:'Strengthening a building against storms = reinforcing it. "Dangle" = hang loosely. "Impair" = weaken (the opposite). "Replace" = swap out, not strengthen.'},
+    23:{sentence:'The vase was unique, and no matter where Aubrey looked, she could not find its ________.',correct:'(A) equivalent',why:'A unique vase has no equal — no equivalent (something equal or same in value). "Impact" = effect. "Purpose" = reason. "Worth" = value, but the sentence says she couldn\'t find it anywhere, implying she looked for a match.'},
+    24:{sentence:'Brody, who had forgotten his sweater in his car, went back out to ________ it so that he could wear it later.',correct:'(D) retrieve',why:'Going back to the car to get the sweater = retrieve (get back something left somewhere). "Display" = show off. "Exchange" = trade. "Overlook" = ignore — the opposite.'},
+    25:{sentence:'One of my fondest memories of growing up includes the ________ of cooking bacon and brewing coffee filling the air.',correct:'(A) aroma',why:'Bacon and coffee "filling the air" = a smell = aroma. "Flavor" = taste, not smell. "Recipe" = instructions. "Taste" = what you experience in your mouth, not in the air.'},
+    26:{sentence:'Unless exact dimensions are needed, one only needs to use ________ measurements.',correct:'(A) approximate',why:'When you don\'t need exact numbers, approximate (close but not exact) measurements are fine. "Detailed" and "precise" = exactly the opposite. "Metric" = a system of measurement, not a level of accuracy.'},
+    27:{sentence:'Many people ________ to a new country, traveling in search of better opportunities and a permanent new home.',correct:'(B) immigrate',why:'Moving to a new country permanently = immigrate. "Convert" = change religion or form. "Return" = go back. "Visit" = go temporarily, not permanently.'},
+    28:{sentence:'The home\'s decorations were best described as ________, since they were expensive, comfortable, and tasteful, all at once.',correct:'(C) luxurious',why:'Expensive, comfortable, and tasteful = luxurious (rich and very comfortable). "Cheap" and "tacky" are the opposite. "Gaudy" = flashy and tasteless — contradicts "tasteful."'},
+    29:{sentence:'Fletcher spent all of his free time studying for the test because he ________.',correct:'(B) wanted a good grade',why:'Someone who spends all free time studying = motivated by wanting a good grade. "Disliked the class" and "preferred video games" would lead to less studying. "Sat next to the window" is irrelevant.'},
+    30:{sentence:'Instead of recovering, as the veterinarian had hoped, the horse ________.',correct:'(D) became sicker, and could not walk on its own',why:'"Instead of recovering" means the opposite happened. Only D describes a worsening condition. B (improved) is recovery. A (threw its rider) and C (stamped feet) are unrelated to health.'},
+    31:{sentence:'Everyone knows that the camp director, Mrs. Jones, has an amazing memory; ________.',correct:'(D) she somehow manages to greet all two hundred campers by name',why:'An amazing memory = the ability to remember many names. D directly illustrates this with a specific example. A (makes learning fun) and B (efficient camp) describe other qualities. C (never remembers keys) contradicts an amazing memory.'},
+    32:{sentence:'After winning the lottery, Robert generously ________ instead of spending it all on himself.',correct:'(C) shared the money with charities',why:'"Generously" and "instead of spending on himself" = giving to others = sharing with charities. A (vacation) and D (expensive clothes) are self-indulgent. B (refused the money) contradicts "winning."'},
+    33:{sentence:'Since she ________, Jackie\'s idea of a meal involved ordering delivery or going out to a restaurant.',correct:'(B) did not enjoy cooking',why:'Ordering delivery or eating out instead of cooking = she doesn\'t like to cook. A (ate quickly) and C (preferred friends) don\'t explain why she never cooks. D (loved to prepare food) is the opposite.'},
+    34:{sentence:'Unlike many of his peers, who ________, Shakespeare was famous for writing plays in many different genres.',correct:'(D) concentrated in specific types of plays',why:'"Unlike" signals a contrast. Shakespeare wrote many genres; his peers did the opposite = concentrated in specific types. A, B, and C don\'t create a clear contrast with writing in many genres.'}
+  },
+  '2': {
+    18:{sentence:'Seeing that the conditions were ________ for surfing, Liya quickly grabbed her wetsuit.',correct:'(C) ideal',why:'Grabbing the wetsuit eagerly = the conditions were perfect. Ideal = best possible. "Insufficient" = not enough (she wouldn\'t rush). "Faulty" = broken. "Honest" makes no sense describing surfing conditions.'},
+    19:{sentence:'Mazen left his cake in the oven too long, but he hoped he could ________ it by covering it with icing.',correct:'(A) salvage',why:'A burned cake covered with icing = trying to save/rescue it = salvage. "Secure" = make safe. "Escape" = flee. "Measure" = calculate — none mean saving a ruined baked good.'},
+    20:{sentence:'The nature guide always warns hikers not to touch any snakes that they ________ on the trail, as many local species are poisonous.',correct:'(D) encounter',why:'Snakes you come across while hiking = snakes you encounter. "Elude" = avoid. "Oppose" = fight against. "Reject" = refuse — none describe simply coming across a snake.'},
+    21:{sentence:'The new book received ________ reviews for its meticulous coverage, high-quality illustrations, and engaging discussion.',correct:'(D) favorable',why:'Meticulous coverage and high-quality illustrations = praise-worthy qualities = favorable (positive) reviews. "Calm" doesn\'t describe reviews. "Negative" and "moveable" don\'t fit a well-made book.'},
+    22:{sentence:'Joan travelled to Thailand, where she learned to prepare ________ Pad Thai from traditional chefs.',correct:'(B) authentic',why:'Learning from traditional chefs = learning the genuine, original recipe = authentic. "Artificial" = fake (opposite). "Distressing" = upsetting. "Useless" = serving no purpose — neither applies to learning a recipe.'},
+    23:{sentence:'Scientists in Brazil were ________ when they discovered a new species of river dolphin.',correct:'(A) thrilled',why:'Discovering a new species = an exciting scientific achievement = thrilled (extremely happy). "Eager" = wanting something to happen (past tense doesn\'t fit). "Dejected" = sad. "Bored" = the opposite of excited.'},
+    24:{sentence:'When Maya learned that Tommy played piano, ran track and field, and volunteered with seniors, she was impressed by the ________ of his interests.',correct:'(C) variety',why:'Piano + track + volunteering = many different interests = variety (a range of different things). "Increase" = growth over time. "Resemblance" = similarity. "Community" = a group of people — none describe the breadth of his interests.'},
+    25:{sentence:'Charlie Chaplin was a British comic actor, filmmaker, and composer who rose to ________ in the silent era.',correct:'(A) prominence',why:'A famous actor who became celebrated = rose to prominence (fame, importance). "Elevation" = rising physically. "Dependence" = relying on others. "Creation" = making something — none capture becoming famous.'},
+    26:{sentence:'Wujie was ________ when his class was cancelled, because it gave him more time to complete important homework.',correct:'(B) relieved',why:'Class cancelled = more time for homework = a good thing for Wujie = relieved (glad the pressure is off). "Disappointed" = sad (he was happy). "Confused" = uncertain. "Aggravated" = annoyed — all contradict the benefit described.'},
+    27:{sentence:'Sainte-Enimie, in southern France, is the location of several monasteries and other interesting ________ sites.',correct:'(B) religious',why:'Monasteries are religious buildings, so the other interesting sites nearby are also religious. "Mundane" = ordinary (opposite of interesting monasteries). "Offensive" = inappropriate. "Theoretical" = based on theory, not physical places.'},
+    28:{sentence:'Sheep\'s wool is the most widely used animal fiber, and is usually ________ by shearing.',correct:'(D) harvested',why:'Shearing = cutting the wool from sheep = harvesting it. "Planted" = put in the ground (not wool). "Concluded" = finished. "Dispersed" = scattered — none describe collecting wool by shearing.'},
+    29:{sentence:'John knew a healthy diet called for a variety of vegetables, but ________.',correct:'(C) he only ate spinach',why:'"But" signals a contrast with a healthy varied diet. Only C contradicts "variety" — he ate just one vegetable. A and B describe variety (many kinds). D (desserts) is unrelated to vegetables.'},
+    30:{sentence:'Although the author claimed her work was pure fiction, those who knew her well ________.',correct:'(A) recognized many real events from her life',why:'"Although fiction" + "those who knew her" = they spotted real-life details. A creates the right contrast. B (bought copies) and D (supported her career) don\'t contrast with fiction. C (didn\'t understand it) would make more sense without "although."'},
+    31:{sentence:'Since she was a skilled surgeon, Dr. Gavora ________.',correct:'(B) successfully performed the operation',why:'A skilled surgeon would excel at surgery. B directly follows from skill. A (skiing) and C (foreign films) are unrelated hobbies. D (interested in medicine from youth) is background, not what a skilled surgeon does.'},
+    32:{sentence:'Jolie had been looking forward to the recital, but she ________.',correct:'(B) fell ill and was unable to perform',why:'"But" signals a sad contrast with anticipation. Only B explains why the recital didn\'t go as hoped. A (bought shoes) and C (planned favorite song) are happy, not contrasts. D (musical styles) doesn\'t explain what happened.'},
+    33:{sentence:'In contrast to the realistic and conventional style of his early paintings, Pablo Picasso\'s later work in the Cubist style ________.',correct:'(C) was far more abstract and experimental',why:'"In contrast to realistic" = the Cubist work was the opposite = abstract. C is the logical contrast. A (not well known) and D (not popular) are about fame, not style. B (life-like) = realistic, which contradicts the contrast.'},
+    34:{sentence:'Ceres was the first asteroid ever discovered, but ________.',correct:'(A) researchers initially thought it was a planet',why:'"But" creates a contrast — despite being an asteroid, something else was thought about it. A explains the twist: scientists first classified it as a planet. B, C, and D all give unrelated facts that don\'t contrast with it being "the first asteroid."'}
+  }
+
+
+,
+  '3': {
+    18:{sentence:'Harinder was ________ to learn that his flight was cancelled, as it meant that he would miss his beloved grandfather\'s birthday party.',correct:'(B) dismayed',why:'"As it meant that he would miss" the birthday party = clearly a bad outcome. Dismayed = upset and disappointed. Elated and pleased are the opposite. Threatened does not fit a flight cancellation.'},
+    19:{sentence:'Although they are normally gentle creatures, pigs can become ________ when forced to live in cramped pens.',correct:'(C) aggressive',why:'"Although normally gentle" signals a contrast — they become the OPPOSITE when cramped. Aggressive is the correct contrast. Playful and loving continue the gentle theme. Fatigued does not explain a behavioral change.'},
+    20:{sentence:'Jake\'s rabbit was very ________, and it would not come out of its cage when people were around.',correct:'(D) timid',why:'Not coming out when people are around = shy and fearful = timid. Nautical and political are irrelevant to rabbit behavior. Annoying does not explain why it hides.'},
+    21:{sentence:'The beautiful vistas and abundant wildlife of the Galapagos Islands ________ numerous visitors every year.',correct:'(A) attract',why:'Beautiful scenery and wildlife = reason people go there = attract. Repel and reject are opposites. Paint makes no sense in context.'},
+    22:{sentence:'Ambreen was ________ to make a suggestion during the school council meeting, as the school council president did not welcome input.',correct:'(A) hesitant',why:'If the president did not welcome input, Ambreen would be afraid to speak = hesitant. Excited, eager, and confident would all make her MORE likely to speak, not less.'},
+    23:{sentence:'The museum guide told the students they must ________ from touching any of the exhibits because they can be easily damaged.',correct:'(C) refrain',why:'"Must refrain from touching" = must stop oneself from touching. Admit = confess. Applaud = clap. Retain = keep. Only refrain means to hold back from an action.'},
+    24:{sentence:'Eli was the bakery\'s most ________ customer; he continued to shop there even though the grocery store had lower prices.',correct:'(D) loyal',why:'Continuing to shop somewhere despite cheaper alternatives = loyalty. Fickle means the opposite. Knowledgeable and neutral do not explain why someone stays with a store.'},
+    25:{sentence:'The story\'s villain was truly ________ because he lied to the townsfolk and cheated during his duel with the hero.',correct:'(A) despicable',why:'Lying and cheating = morally terrible = despicable. Relatable would make him sympathetic. Charming and forgettable both soften the negative behavior described.'},
+    26:{sentence:'Feral cats are notoriously ________ around people, while their housecat cousins are usually very comfortable with humans.',correct:'(D) skittish',why:'Contrast with housecats who are comfortable = feral cats are the OPPOSITE = skittish (nervous, easily frightened). Bold and tame would make them similar to housecats. Impervious means unaffected, which does not fit.'},
+    27:{sentence:'Because dark chocolate is her favorite food, Josie was ________ to learn that it contains healthy antioxidants.',correct:'(A) ecstatic',why:'Learning your favorite food is also healthy = great news = ecstatic. Disappointed implies bad news. Reluctant and confused do not fit receiving good news about your favorite food.'},
+    28:{sentence:'Sally was proud of the ________ in her neighborhood, which was home to people from a variety of countries, religions, and professions.',correct:'(D) diversity',why:'A variety of countries, religions, and professions = diversity. Repression is the opposite of celebrating differences. Anonymity means being unknown. Altitude is irrelevant.'},
+    29:{sentence:'Unlike her brother, who never strays far from home, Rebecca ________.',correct:'(B) is a world traveler',why:'"Unlike her brother who never strays" = Rebecca is the OPPOSITE = she travels widely. A (does not travel far) would make her the same as her brother. C and D do not directly contrast with staying home.'},
+    30:{sentence:'Since Jodhi was a talented chef, ________.',correct:'(A) she always prepared flavorful dishes',why:'"Since she was a talented chef" = the result should relate to cooking skill. A directly follows from being talented at cooking. B (father was baker) is about someone else. C and D are unrelated to culinary talent.'},
+    31:{sentence:'Although Bret had spent many hours preparing for the test, ________.',correct:'(B) his grade was not as high as he had hoped',why:'"Although he prepared" signals contrast — the result was unexpected or disappointing. B creates the right contrast. A (performed well) would match, not contrast, with his preparation. C and D are not about his performance.'},
+    32:{sentence:'Logan and his sister enjoyed watching basketball, but ________.',correct:'(B) were not talented players themselves',why:'"But" signals contrast with enjoying watching. Not being talented players creates an ironic contrast. A, C, and D all extend the theme of enjoying basketball rather than contrasting with it.'},
+    33:{sentence:'I would love to volunteer at the harvest festival, but ________.',correct:'(D) I will sadly be out of town that weekend',why:'"Would love to but" = obstacle preventing participation. D provides the reason why (being out of town). A, B, and C are all positive statements that would not explain why the person cannot volunteer.'},
+    34:{sentence:'Although his books have sold millions of copies since his death, F. Scott Fitzgerald ________.',correct:'(C) had many financial difficulties during his career',why:'"Although posthumous success" signals contrast — during his life things were different. C creates the right ironic contrast (famous after death, struggled in life). A and D are positive statements consistent with success. B does not contrast with posthumous fame.'}
+  }
+,
+  'D': {
+    11:{sentence:"The scientist\'s discovery was ________, as no one had ever observed this phenomenon before.",correct:'(B) groundbreaking',why:'"No one had ever observed this" signals something completely new. Groundbreaking = pioneering. Ordinary and expected are opposites. Disappointing would mean the discovery failed.'},
+    12:{sentence:'Although Maria had studied all week, she felt ________ when she saw how long the exam was.',correct:'(C) overwhelmed',why:'"Although she studied" signals contrast — the exam surprised her negatively. Overwhelmed = unable to cope with something too large. Confident and prepared would match her studying. Excited would be positive.'},
+    13:{sentence:'The chef added just a ________ of salt to the soup, careful not to use too much.',correct:'(D) pinch',why:'"Careful not to use too much" signals a very small amount. A pinch is the smallest measure. A pound and a gallon are far too large. A handful is also much more than a pinch.'},
+    14:{sentence:'Because the twins looked identical, their new teacher often ________ their names.',correct:'(A) confused',why:'Identical twins are hard to tell apart — a new teacher would mix up their names. Confused = mixed up. Learned means she got them right. Remembered = recalled correctly — the opposite of the problem.'},
+    15:{sentence:'Since the bridge was ________, drivers were forced to take a longer route through the mountains.',correct:'(C) under construction',why:'Being forced to take a longer route means the bridge was unavailable. Under construction = being repaired = closed. Newly opened and well maintained would mean accessible. Heavily trafficked means busy, not closed.'}
+  }
+};
+
+
+const READING_QS = {
+  '1': {
+    // Passage 1 (Q1-5): Toothpaste history
+    1:{skill:"Main Idea & Author's Purpose",passage:'History of Toothpaste',correct:'(D) give a history of how a product has changed over time',why:'The passage traces toothpaste from ancient Egypt through modern tubes and fluoride. D captures the full chronological sweep. A (persuade), B (find inventor), and C (compare uses) are all too narrow.'},
+    2:{skill:'Vocabulary in Context',passage:'History of Toothpaste',correct:'(D) compare these products with toothpaste, a product which does not have only one inventor',why:'Edison and Bell are famous single inventors; toothpaste had many inventors. The comparison highlights toothpaste\'s unique "no single inventor" story. A, B, and C misread the purpose.'},
+    3:{skill:'Evidence & Supporting Details',passage:'History of Toothpaste',correct:'(C) Both were used primarily to keep teeth clean',why:'The passage states ancient Egyptian paste was for cleaning teeth, and modern toothpaste does the same. C is the shared purpose. A (tubes), B (ginseng), and D (sensitivity) are not shared traits.'},
+    4:{skill:'Vocabulary in Context',passage:'History of Toothpaste',correct:'(C) rough',why:'"Abrasive" means rough or scratchy. Ancient toothpastes with crushed bones and shells were literally rougher than modern smooth pastes. A (annoying), B (bitter), and D (silky) don\'t fit the physical texture being described.'},
+    5:{skill:'Evidence & Supporting Details',passage:'History of Toothpaste',correct:'(B) today\'s toothpastes don\'t include bone',why:'The passage says ancient toothpastes included "ashes of burnt animal hooves," bones, and shells. Modern toothpaste is smooth and doesn\'t include these. B correctly identifies this key difference.'},
+    // Passage 2 (Q6-10): Renewable energy
+    6:{skill:"Main Idea & Author's Purpose",passage:'Renewable vs Non-Renewable Energy',correct:'(C) to explain why people should start using more renewable energy sources',why:'The passage describes renewable advantages, non-renewable problems, and calls for change. C captures the persuasive purpose. A (coal/oil process) and D (10% statistic) are too narrow. B reverses the argument.'},
+    7:{skill:'Tone & Attitude',passage:'Renewable vs Non-Renewable Energy',correct:'(C) encyclopedia about energy',why:'The passage is informational, uses precise definitions, covers multiple sides, and presents facts without dramatic language — like an encyclopedia entry. A (commercial) and D (advertisement) are too persuasive. B (novel) is fiction.'},
+    8:{skill:'Evidence & Supporting Details',passage:'Renewable vs Non-Renewable Energy',correct:'(C) renewable energy source',why:'Hydropower uses falling water, which "does not use up any water" — exactly the definition the passage gives for renewable sources. A (fossil fuel), B (neutral), and D (non-renewable) all contradict the definition.'},
+    9:{skill:'Inference',passage:'Renewable vs Non-Renewable Energy',correct:'(A) Non-renewable energy is cheaper than renewable energy',why:'The passage states the "main reason" most US energy is non-renewable is "money" — renewable is "more expensive." A is the supported reason. B and C reverse the facts. D is a detail about what non-renewable includes, not a reason for its dominance.'},
+    10:{skill:'Vocabulary in Context',passage:'Renewable vs Non-Renewable Energy',correct:'(A) consistent',why:'"Reliable" in line 52 means dependable and consistent. The passage says non-renewable is "more reliable" because cloudy or calm days reduce renewable output. A (consistent) matches. B (expensive), C (polluting), and D (untrustworthy) don\'t fit.'},
+    // Passage 3 (Q11-15): Sistine Chapel / Michelangelo
+    11:{skill:"Main Idea & Author's Purpose",passage:'Michelangelo & the Sistine Chapel',correct:'(C) discuss a particular work of art',why:'The entire passage is about the Sistine Chapel ceiling — its creation, techniques, and significance. C is most accurate. A (unique building) ignores the art focus. B (painting technique) is too narrow. D (artist\'s life) is broader than the passage.'},
+    12:{skill:'Vocabulary in Context',passage:'Michelangelo & the Sistine Chapel',correct:'(B) famous',why:'"Iconic" in line 13 means widely recognized and famous. The scene of God and man nearly touching is known worldwide. A (artistic) and C (old) are partially true but miss the cultural fame. D (simple) is the opposite.'},
+    13:{skill:'Evidence & Supporting Details',passage:'Michelangelo & the Sistine Chapel',correct:'(D) introduce how Michelangelo became involved with the Sistine Chapel',why:'Paragraph 2 describes Pope Julius II commissioning Michelangelo in 1508. D captures this. A (why it\'s popular) is not the paragraph\'s focus. B (their relationship) is too narrow. C (comparison to other projects) is not mentioned.'},
+    14:{skill:'Inference',passage:'Michelangelo & the Sistine Chapel',correct:'(C) using his sculptures as models',why:'The passage lists: scaffold (A), assistants (B), and fresco technique (D) — all methods used. C is NOT mentioned; sculptures are referenced only to note figures look sculptural. This is an EXCEPT question — find the one NOT in the passage.'},
+    15:{skill:'Tone & Attitude',passage:'Michelangelo & the Sistine Chapel',correct:'(B) Michelangelo was an adaptable artist',why:'The passage shows him learning fresco despite being a sculptor, building scaffolding, starting over after a mistake, and completing the work. All show adaptability. A (harsh ruler) is unsupported. C (not well known) contradicts the passage. D (hard to see details) is not the author\'s conclusion.'},
+    // Passage 4 (Q16-20): Julia cooking schnitzel with Grandpa
+    16:{skill:"Main Idea & Author's Purpose",passage:'Julia Cooks with Grandpa',correct:'(D) tell about a meaningful experience',why:'The story is a warm personal narrative about Julia learning to cook schnitzel and bonding with her grandfather. D captures the purpose. A (share a recipe) is too literal. B (monthly tradition) is background, not the focus. C (benefits of cooking) is too instructional.'},
+    17:{skill:'Vocabulary in Context',passage:'Julia Cooks with Grandpa',correct:'(A) concern',why:'"Apprehension" = worry or anxiety. Julia had never cooked before and didn\'t know how. A (concern) matches this. B (joy) is the opposite. C (sadness) adds emotion not in the text. D (understanding) is a different meaning of apprehension.'},
+    18:{skill:'Evidence & Supporting Details',passage:'Julia Cooks with Grandpa',correct:'(B) flattened the chicken with a tool',why:'After washing hands, Grandpa demonstrated flattening the chicken with a mallet, then Julia tried. B is the immediate next step. A (tasted) didn\'t happen yet. C (breadcrumbs) and D (poured mixture) came later.'},
+    19:{skill:'Inference',passage:'Julia Cooks with Grandpa',correct:'(A) what breadcrumbs look like',why:'The comparison of breadcrumbs to "a sandy beach" is a visual simile — it shows what the breadcrumbs looked like. A is correct. B (smell), C (fun), and D (temperature) are all unrelated to what a sandy beach comparison tells us.'},
+    20:{skill:'Inference',passage:'Julia Cooks with Grandpa',correct:'(D) appreciative of the strong relationship she has with her grandfather',why:'Julia\'s final reflection on Grandpa\'s words about laughter being the best sound shows she treasured the experience. D captures this emotional conclusion. A (go home) and B (chores) are not mentioned. C (upset) contradicts the warm tone.'},
+    // Passage 5 (Q21-25): Drew\'s first day at new school
+    21:{skill:"Main Idea & Author's Purpose",passage:'Drew\'s First Day',correct:'(B) describe the experience of attending a new school',why:'The story follows Drew\'s anxious first day, making a friend (Jake), and feeling better by the end. B captures this arc. A (give advice) is too instructional. C (persuade parents not to move) is not the purpose. D (teachers and bus drivers) is not the focus.'},
+    22:{skill:'Evidence & Supporting Details',passage:'Drew\'s First Day',correct:'(C) distracted',why:'"Preoccupied" means mentally absorbed in something else — Drew was so absorbed in worry he didn\'t notice his mom talking. C (distracted) matches. A (attentive) is the opposite. B (carefree) means relaxed, not worried. D (early) doesn\'t fit.'},
+    23:{skill:'Inference',passage:'Drew\'s First Day',correct:'(B) from nervous to relieved',why:'The story begins with Drew anxious and unsure; it ends with him shaking Jake\'s hand feeling "a wave of relief." B captures this arc. A (hopeful to upset) and C (optimistic to pessimistic) are the wrong direction. D (enthusiastic to bored) doesn\'t fit.'},
+    24:{skill:'Evidence & Supporting Details',passage:'Drew\'s First Day',correct:'(C) Drew is shy, and is hoping to be left alone',why:'Drew stared at his shoes hoping the kid across the aisle "wouldn\'t notice" him — showing shyness and desire to be left alone. C is supported. A (prefers to stand) is wrong. B (every seat occupied) contradicts the text. D (carsick) is not mentioned.'},
+    25:{skill:'Inference',passage:'Drew\'s First Day',correct:'(B) when he has science class',why:'Lines 38-45: Drew wanted to ask about the teachers but worked up to asking about science class — "Do you know where Mr. B\'s classroom is?" B is the question Drew asked. A (why teacher is funny), C (teacher\'s name), and D (if teachers are nice) are not the question asked.'}
+  },
+  '2': {
+    // Passage 1 (Q1-5): Field trip to earthen mounds
+    1:{skill:"Main Idea & Author's Purpose",passage:'Field Trip to Earthen Mounds',correct:'(D) tell a story about a field trip',why:'The passage is a first-person narrative about a child\'s field trip experience. D captures this. A (describe ancient civilization) is too narrow. B (express opinion about earthen mounds) is not quite right — the author tells a story. C (explain why never been to zoo) is incorrect; the child\'s brother went to a zoo.'},
+    2:{skill:'Vocabulary in Context',passage:'Field Trip to Earthen Mounds',correct:'(B) buried',why:'"Interred" means buried or placed in a grave. The passage describes bodies buried within the mounds. B (buried) matches exactly. A (in-between), C (entered), and D (studied) are all incorrect meanings.'},
+    3:{skill:'Tone & Attitude',passage:'Field Trip to Earthen Mounds',correct:'(D) pessimistic',why:'The narrator thought observing "large piles of old dirt" was "less exciting" than the zoo — a negative, pessimistic view. D fits. A (rational) describes thinking, not mood. B (joyful) and C (enthusiastic) are the opposite of the child\'s attitude.'},
+    4:{skill:'Inference',passage:'Field Trip to Earthen Mounds',correct:'(D) Some lessons are easier to learn through experience than by just reading about them',why:'The narrator read about the mounds and was bored, but experiencing them was powerful and moving. D captures this lesson. A (zoo better) contradicts the narrator\'s final reflection. B (reading in advance ruins it) is not argued. C (guides better than teachers) is not stated.'},
+    5:{skill:'Evidence & Supporting Details',passage:'Field Trip to Earthen Mounds',correct:'(A) even more ancient than the pyramids of Egypt',why:'The teacher said the mounds "pre-dated the pyramids of Egypt." A is directly stated. B (built by European explorers) contradicts the passage — Europeans didn\'t know who built them. C (similar in construction) is not stated. D (first North American cities) is not claimed.'},
+    // Passage 2 (Q6-10): Fireflies
+    6:{skill:"Main Idea & Author's Purpose",passage:'Fireflies',correct:'(C) provide information about various types of fireflies',why:'The passage covers adult fireflies, larvae (glowworms), and predatory fireflies — three distinct types. C captures the survey of variety. A (disprove myths) is not the approach. B (describe glowing insects generally) is too broad. D (explain glow to attract prey) is only the last paragraph.'},
+    7:{skill:'Inference',passage:'Fireflies',correct:'(C) found in many different places throughout the world',why:'"Temperate and tropical environments" = fireflies live in many different climates and regions worldwide. C is the supported inference. A (only chemical glow insect) is not stated. B (larger than most flying insects) is not mentioned. D (more common in tropical) is not supported — both environments are listed.'},
+    8:{skill:'Evidence & Supporting Details',passage:'Fireflies',correct:'(A) Are some fireflies predators?',why:'The passage explicitly describes "femme fatale" fireflies that lure and eat other fireflies — making them predators. A is answered. B (why some don\'t glow as adults) is answered. C (most common species) is NOT answered. D (where fireflies were first discovered) is NOT answered.'},
+    9:{skill:'Inference',passage:'Fireflies',correct:'(D) the young form of any species of firefly',why:'The passage states "larvae are the young form of fireflies, and all firefly larvae glow." This directly defines glowworms. D is supported. A (a type of worm) is incorrect. B (the only non-flying firefly) is wrong — it\'s a larva. C (a predatory type) describes the femme fatale adult, not larvae.'},
+    10:{skill:'Vocabulary in Context',passage:'Fireflies',correct:'(A) in the air',why:'"Aerial flashes" in line 13 describes flashes made while flying through the air. Aerial = relating to the air. A matches. B (brighter), C (predatory), and D (warning) are unrelated to the flying/airborne meaning of aerial.'},
+    // Passage 3 (Q11-15): Japanese tea ceremony (Chaji)
+    11:{skill:"Main Idea & Author's Purpose",passage:'Japanese Tea Ceremony (Chaji)',correct:'(C) tea ceremonies',why:'Every sentence describes the steps and customs of the Japanese chaji tea ceremony. C is the clear topic. A (manners) is too general. B (food) is just one part. D (gardens) is just one setting mentioned.'},
+    12:{skill:'Evidence & Supporting Details',passage:'Japanese Tea Ceremony (Chaji)',correct:'(C) before entering the tea room',why:'The passage states guests go to a stone basin, wash hands, "remove their sandals and enter the tea room." Sandals are removed just before entering. C is directly supported. A (before waiting room), B (before garden), and D (before washing hands) all place it too early.'},
+    13:{skill:'Tone & Attitude',passage:'Japanese Tea Ceremony (Chaji)',correct:'(D) formal',why:'The chaji involves specific steps, special clothing (tabi), ritual purification, silent bowing, and a structured sequence — all signs of formality. D fits. A (tense) implies stress. B (casual) is the opposite. C (dark) doesn\'t match the respectful, precise tone described.'},
+    14:{skill:'Inference',passage:'Japanese Tea Ceremony (Chaji)',correct:'(D) the shutters of the tea room are shut',why:'The passage says "during the break, the host replaces the scroll, opens the tea room\'s shutters" — this means the shutters were closed during the meal. D is the correct inference. A (host not present) is not stated. B (guests eat too much) is not stated. C (host gets tired) is not mentioned.'},
+    15:{skill:'Vocabulary in Context',passage:'Japanese Tea Ceremony (Chaji)',correct:'(A) clean',why:'"Purify themselves by washing their hands and rinsing their mouths with water" — purify in this context = cleanse or make clean. A matches. B (finish) doesn\'t fit — washing hands doesn\'t finish them. C (observe) and D (dabble) are completely unrelated to the act of washing.'},
+    // Passage 4 (Q16-20): Rural schoolteacher
+    16:{skill:"Main Idea & Author's Purpose",passage:'A Country Schoolteacher',correct:'(D) He was proud of his school and worked hard to maintain it',why:'The narrator says "I loved my school" and worked hard to convince absent students to return. D captures this dedication. A (easy work) contradicts his visits to families. B (resentful) is the opposite. C (bored) contradicts his love for the school.'},
+    17:{skill:'Evidence & Supporting Details',passage:'A Country Schoolteacher',correct:'(B) visit his students\' families to find out why they were missing school',why:'The passage directly states: "I would visit the Eddings, who lived in two very dirty rooms, and ask why... Mack and Ed were so often missing." B is directly supported. A (social calls) is not the purpose. C (homework) is not mentioned. D (entertain families) is not stated.'},
+    18:{skill:'Inference',passage:'A Country Schoolteacher',correct:'(C) the teacher in a small country school',why:'The narrator describes the school opening, 30 students, a simple setting, visiting families — all consistent with a country schoolteacher. C is supported. A (best student) contradicts "I loved my school" from a teacher\'s perspective. B (farmer) is not suggested. D (traveler writing about a visit) doesn\'t fit the ongoing involvement.'},
+    19:{skill:'Evidence & Supporting Details',passage:'A Country Schoolteacher',correct:'(B) The children are needed at home to help with the farm and family',why:'The passage states the father said "the crops needed the boys" and the mother said "Lugene must mind the baby." B captures both reasons. A (punishment) is not mentioned. C (don\'t want education) is not stated. D (children prefer home) is not suggested.'},
+    20:{skill:'Inference',passage:'A Country Schoolteacher',correct:'(D) not written in simple English',why:'The narrator "put Cicero\'s pro Archia Poeta into the simplest English" to convince the Lawrences — meaning the original was NOT in simple English. D is the correct inference. A (Latin treatise on farming) is not stated. B (story about geography) is not stated. C (poem about the uneducated) is not specifically stated.'},
+    // Passage 5 (Q21-25): Hollywood studio system
+    21:{skill:"Main Idea & Author's Purpose",passage:'Hollywood Studio System',correct:'(B) describe the studio system and its decline',why:'The passage covers what the studio system was, how Cary Grant left it, how it gave him advantages, and ultimately how it was legally challenged and dismantled. B captures this arc. A (Grant\'s career choices) is too narrow. C (higher profits) is not the focus. D (long-term contracts unfair) is not the main argument.'},
+    22:{skill:'Evidence & Supporting Details',passage:'Hollywood Studio System',correct:'(A) forming long-term contracts with actors and other staff',why:'The passage explicitly states the studio system involved "creative personnel under long-term contracts." A is directly supported. B (paying Grant generously) happened AFTER he left the system. C (hiring Hitchcock) is a detail, not a defining practice. D (competition among theaters) is not mentioned.'},
+    23:{skill:'Inference',passage:'Hollywood Studio System',correct:'(B) he wanted more control over his career',why:'The passage states Grant "gained control over every aspect of his career" by leaving. This was the benefit — and therefore the motivation. B is directly supported. A (own theaters) is not mentioned. C (work with Hitchcock) is a result, not the reason. D (direct films) is not stated.'},
+    24:{skill:'Evidence & Supporting Details',passage:'Hollywood Studio System',correct:'(C) Were any of the practices of the studio system against the law?',why:'The passage directly states the Federal Trade Commission investigated studios and "determined that their practices were against the law." C is answered. A (co-stars\' pay) is not given. B (who started the Golden Age) is not answered. D (Grant\'s favorite director) is not stated.'},
+    25:{skill:'Vocabulary in Context',passage:'Hollywood Studio System',correct:'(D) money earned',why:'"Revenue" in line 31 = money a business or person earns. Grant received $700,000 for 10% of gross revenue = 10% of money earned. D matches. A (spent), B (loaned), and C (lost) are all unrelated to income earned.'}
+  },
+  '3': {
+    // Passage 1 (Q1-5): Air currents / how wind works
+    1:{skill:'Vocabulary in Context',passage:'Air Currents',correct:'(A) imagine',why:'"Picture" in line 14 means to visualize or imagine in your mind. The author says you can "picture the atmosphere" as made of currents — it\'s a mental image. Paint/sketch suggest drawing. Display suggests showing something external.'},
+    2:{skill:"Main Idea & Author\'s Purpose",passage:'Air Currents',correct:'(C) Educate',why:'The passage explains the science of how warm and cold air interact to create wind currents. It provides facts and explanations throughout — a clearly educational purpose. It does not confuse, entertain, or try to influence opinions.'},
+    3:{skill:'Evidence & Supporting Details',passage:'Air Currents',correct:'(D) sink beneath hot air currents',why:'The passage states that warm air rises and spreads above cold air, and cold air "rushes towards another point" to replace the warm air. Cold air sinks to fill the space. A (rise above), B (created by snow), C (cause storms) are not supported.'},
+    4:{skill:'Inference',passage:'Air Currents',correct:'(A) how air currents affect weather',why:'The passage explains how air currents work and create mountain/valley breezes. The natural next step would be broader weather effects. B (other planets) is too broad a leap. C (plant growth) is unrelated. D (why hot air is less dense) was already discussed.'},
+    5:{skill:'Text Structure',passage:'Air Currents',correct:'(B) provide a specific example of the concept discussed in the first paragraph',why:'The last paragraph describes mountain and valley breezes — a specific, real-world example of the general air current principle explained in paragraph 1. A (summarize) — it does not recap the whole passage. C (disprove) — it supports, not contradicts. D (leave a question) — it does not.'},
+    // Passage 2 (Q6-10): Bird migration
+    6:{skill:"Main Idea & Author\'s Purpose",passage:'Bird Migration',correct:'(D) bird migration',why:'Every paragraph discusses migration — why birds migrate, its dangers, its history, and its distances. D captures the full scope. A (why animals migrate) is broader than the passage. B (Manx Shearwater) is just one example. C (how humans track migration) is just one paragraph.'},
+    7:{skill:'Evidence & Supporting Details',passage:'Bird Migration',correct:'(A) Bird migration has been observed for at least 3,000 years',why:'The passage directly states "Ancient Greek authors recorded the migration of species... as much as 3,000 years ago." A is directly supported. B (less dangerous) contradicts the passage. C (only mountain ranges) is too narrow. D (birds get lost) is not stated.'},
+    8:{skill:'Inference',passage:'Bird Migration',correct:'(C) over 14,000 km',why:'The Arctic Tern "travels between the Arctic and Antarctic each year" — a round trip. The passage says the Manx Shearwater migrates 14,000 km between north and south. The Arctic Tern goes further (the passage calls it the long-distance record). C (over 14,000 km) is the correct inference.'},
+    9:{skill:'Evidence & Supporting Details',passage:'Bird Migration',correct:'(C) What are some reasons birds migrate?',why:'The passage directly states birds migrate "due to low levels of food during certain seasons, or in order to breed in a specific place." C is answered. A (how satellite tracking works) is not explained. B (best tracking method) is not stated. D (species that do not migrate) is not covered.'},
+    10:{skill:'Inference',passage:'Bird Migration',correct:'(D) people',why:'Lines 7-15 list: predators (natural), human hunters (people), flying into structures (people built them), habitat destruction (people). Most threats trace back to humans. A (habitat destruction) is only one human threat. B (satellite tracking) actually helps birds. C (poor weather) is not in this paragraph.'},
+    // Passage 3 (Q11-15): Holi festival
+    11:{skill:'Evidence & Supporting Details',passage:'Holi Festival',correct:'(A) its date is based on the full moon and the Hindu calendar',why:'The passage directly states Holi is celebrated "on the last full moon day of the month Phalguna, which is the twelfth month of the Hindu calendar." A is directly supported. B (people cannot decide) is wrong. C (weather) is not mentioned. D (growing popularity) does not explain why the date varies.'},
+    12:{skill:'Text Structure',passage:'Holi Festival',correct:'(C) explain when Holi is celebrated',why:'The second paragraph (lines 11-16) tells us Holi is celebrated at the spring equinox, on the last full moon of Phalguna, typically March or February. C captures this. A (importance) is not the focus of that paragraph. B (festivities) are described in later paragraphs. D (argue for different month) is not the purpose.'},
+    13:{skill:"Tone & Attitude",passage:'Holi Festival',correct:'(C) cheerful',why:'Holi involves color fights, drums, singing, dancing, visiting friends, and sharing delicacies. The mood is joyful and celebratory. Solemn/mournful are the opposite. Formal implies strict rules and restraint, which contradict the free-spirited description.'},
+    14:{skill:'Evidence & Supporting Details',passage:'Holi Festival',correct:'(D) In what part of a city is Holi celebrated?',why:'The passage states the color fight occurs in "open streets, public parks, and outside temples and buildings." D is answered by the text. A (when first celebrated) is not stated. B (favorite delicacies) are mentioned but not described. C (how many cities) is not given.'},
+    15:{skill:'Vocabulary in Context',passage:'Holi Festival',correct:'(B) inventive',why:'"Creative with their approach to the festivities" = finding new, original ways to participate = inventive. Productive suggests output, not originality. Talented implies a skill. Dull is the opposite of creative.'},
+    // Passage 4 (Q16-20): The Dust Bowl
+    16:{skill:'Inference',passage:'The Dust Bowl',correct:'(B) the 1920s',why:'The passage says extensive plowing "during the previous decade" before the 1930s dust bowl, and that this plowing "had displaced the native deep-rooted grasses." The decade before the 1930s is the 1920s. B is the correct inference.'},
+    17:{skill:'Vocabulary in Context',passage:'The Dust Bowl',correct:'(B) predicament',why:'"Plight" in line 42 describes the terrible situation of families who had to abandon their farms. A predicament is a difficult, unpleasant situation. Pledge means a promise. Success and achievement are the opposite of what these families experienced.'},
+    18:{skill:"Main Idea & Author\'s Purpose",passage:'The Dust Bowl',correct:'(A) the causes and outcomes of the dust bowl',why:'The passage covers what caused the Dust Bowl (plowing, drought, no grass) and what resulted (dust storms, displaced families, economic hardship). A captures both dimensions. B (best farming practices) is never suggested. C (Great Depression) is mentioned but not the focus. D (how effects were reversed) is never discussed.'},
+    19:{skill:"Tone & Attitude",passage:'The Dust Bowl',correct:'(B) neutral',why:'The author presents facts chronologically without expressing strong opinions. Words like "ecological disaster" and "extensive damage" are descriptive, not emotionally charged. Critical would imply blame. Admiring and humorous do not match the serious, factual tone.'},
+    20:{skill:'Text Structure',passage:'The Dust Bowl',correct:'(D) discuss how people were affected by the dust bowl',why:'Lines 31-45 describe families abandoning farms, migrating to California, facing terrible economic conditions, and influencing artists like Woody Guthrie and Steinbeck. D captures this. A (list artists) is too narrow. B (describe the prairies) focuses on setting. C (summarize causes) was covered in earlier paragraphs.'},
+    // Passage 5 (Q21-25): Child narrator who loved writing
+    21:{skill:'Evidence & Supporting Details',passage:'A Young Writer',correct:'(A) Most of her early writing was fiction',why:'The narrator describes writing "fantasies," a "thriller filled with intrigue, mystery," imagining herself as a warrior or emperor — all fictional. A is directly supported. B (real events) contradicts "exaggerated versions." C (learned from father) is wrong — he was a transcriber, not a teacher. D (discouraged) is the opposite.'},
+    22:{skill:"Main Idea & Author\'s Purpose",passage:'A Young Writer',correct:'(C) The narrator was an enthusiastic writer, even as a child',why:'The entire passage describes her childhood passion for writing — rejecting playtime, writing furiously, completing a novel at 9. C captures this central idea. A (published at 9) is wrong — her father typed it, it was not published. B (daydreams were a problem) misreads the tone. D (spanned European capitals) is just a plot detail.'},
+    23:{skill:'Vocabulary in Context',passage:'A Young Writer',correct:'(B) frenzy',why:'"Scribbling with the ferocity of a tiny tornado" describes writing with intense, uncontrolled energy. Frenzy matches this. Accuracy describes precision. Fear does not explain enthusiastic writing. Calm is the opposite of "ferocity."'},
+    24:{skill:'Inference',passage:'A Young Writer',correct:'(D) later in her life',why:'The narrator writes "it would be many years before I ever visited these places myself" — clearly she did visit eventually, but much later. D is directly supported. A (numerous times as a young child) contradicts "would be many years." B (while writing the novel) contradicts the same line. C (only imagination) contradicts the past tense "visited."'},
+    25:{skill:"Tone & Attitude",passage:'A Young Writer',correct:'(D) indifference',why:'The narrator "routinely rejected" invitations to play and "preferred to sit inside and compose." She showed complete indifference to other activities. Excitement/curiosity would make her interested in them. Sensitivity does not capture the act of ignoring alternatives.'}
+  },
+  'D': {
+    1:{skill:"Main Idea & Author\'s Purpose",passage:'The Great Barrier Reef',correct:'(C) the importance and current threats to the Great Barrier Reef',why:'Every paragraph covers the reef — its size, its biodiversity, the zooxanthellae relationship, and the bleaching crisis. C captures the full scope. A (Australia\'s coastline) is too narrow. B (fish and sea turtles) is just one detail. D (why scientists study temperatures) misses the main focus.'},
+    2:{skill:'Evidence & Supporting Details',passage:'The Great Barrier Reef',correct:'(D) provide energy to coral through photosynthesis',why:'The passage directly states: "these algae provide the coral with energy through photosynthesis." D is directly supported. A (build calcium skeletons) is what the coral does, not the algae. B (attract fish) is not stated. C (keep ocean temperature stable) is not mentioned.'},
+    3:{skill:'Vocabulary in Context',passage:'The Great Barrier Reef',correct:'(B) mutually beneficial',why:'"Symbiotic" describes a relationship where both the coral and the zooxanthellae benefit — the algae get shelter and the coral gets energy. Mutually beneficial = both parties gain. Destructive is the opposite. One-sided means only one benefits. Competitive means they compete.'},
+    4:{skill:'Inference',passage:'The Great Barrier Reef',correct:'(A) Human activities have contributed to the decline of the Great Barrier Reef',why:'The passage cites climate change — caused by human carbon emissions — as the reason for coral bleaching. Scientists are working to reduce carbon emissions, confirming the human role. B (full recovery guaranteed) is too certain. C is stated but not a conclusion about decline. D is factually incorrect.'},
+    5:{skill:'Tone & Attitude',passage:'The Great Barrier Reef',correct:'(D) concerned and admiring',why:'The author describes the reef in glowing terms and ends with urgency about conservation — both admiring and concerned. Humorous is not present. Indifferent is the opposite. Critical and pessimistic ignores the admiring dimension.'},
+    6:{skill:"Main Idea & Author\'s Purpose",passage:'A Life of Invention',correct:'(B) describe the life and achievements of Thomas Edison',why:'All three paragraphs focus on Edison — his childhood, his famous inventions, and his research lab. B captures the full sweep. A (compare to other scientists) never happens. C (explain the light bulb) is only one paragraph. D (argue the lab changed science) is a detail, not the main purpose.'},
+    7:{skill:"Author\'s Purpose for a Detail",passage:'A Life of Invention',correct:'(D) To suggest that his home education actually benefited him',why:'The passage states "far from being a setback, this unconventional education allowed Edison to pursue his own interests with great intensity." D captures the intent. A (why he never went to college) is not stated. B (poorly educated) contradicts the passage. C (not as smart) contradicts the passage.'},
+    8:{skill:'Evidence & Supporting Details',passage:'A Life of Invention',correct:'(A) It required thousands of experiments before succeeding',why:'The passage directly states Edison "tested more than 6,000 different materials." A is directly supported. B (invented in one afternoon) is the opposite. C (bamboo was the first material) contradicts the passage. D (least important invention) contradicts the passage.'},
+    9:{skill:'Inference',passage:'A Life of Invention',correct:'(C) viewed setbacks as part of the path to success',why:'Calling failed attempts "ways that won\'t work" frames each failure as useful information, not defeat. C is the correct inference. A (gave up easily) is the opposite. B (discouraged) contradicts the optimistic framing. D (preferred to work alone) is contradicted by paragraph 3.'},
+    10:{skill:'Vocabulary in Context',passage:'A Life of Invention',correct:'(B) done alone',why:'"Invention was not a solitary act but a collaborative effort" — solitary is directly contrasted with collaborative. Solitary = done alone. A (creative) is unrelated. C (dangerous) is unrelated. D (widely celebrated) is unrelated.'},
+    11:{skill:'Inference',passage:'The Decision',correct:'(A) proud of what she has created',why:'Maya surveys tomatoes, tall sunflowers, and a neighborhood that "seemed brighter" — all signs of accomplishment and pride. A is supported. B (bored) contradicts the loving description. C (worried plants haven\'t grown) is the opposite of the thriving garden. D (eager to sell) contradicts her attachment.'},
+    12:{skill:'Evidence & Supporting Details',passage:'The Decision',correct:'(C) The city plans to remove the garden to build a parking structure',why:'The passage directly states "the lot was scheduled to be sold to a developer who planned to build a parking structure." C is directly supported. A (plants dying) contradicts the thriving garden. B (they disagree) is the opposite. D (can\'t decide) contradicts her resolve at the end.'},
+    13:{skill:"Author\'s Purpose for a Detail",passage:'The Decision',correct:'(D) To suggest that Maya should remain determined despite the challenge',why:'The sunflowers are "unbothered by anything the city might decide" — they stand tall regardless. This mirrors what Maya must choose: to stand firm. D captures the symbolic meaning. A (sunflowers grow better) ignores the context. B (Mr. Okonkwo admires them) is not supported. C (too beautiful to destroy) is not the point.'},
+    14:{skill:'Inference',passage:'The Decision',correct:'(B) They should take action by attending the city council meeting',why:'Mr. Okonkwo says "there is a city council meeting on Thursday. We bring everyone... and we make our case." Show up means going to the meeting and speaking. B matches this. A (early morning visits) ignores the meeting. C (building a fence) is not mentioned. D (taking it to court) is not mentioned.'},
+    15:{skill:'Tone & Attitude',passage:'The Decision',correct:'(A) determined',why:'Maya folds the letter and puts it in her pocket — a quiet, resolute gesture. She has chosen to act rather than give up. Mr. Okonkwo\'s words and the sunflower imagery reinforce this. B (hopeless) is the opposite. C (confused) — she understands clearly. D (cheerful) ignores the gravity of the threat.'}
+  }
+};
+
+const CONCEPT_CARDS = {
+  // ── Arithmetic ──────────────────────────────────────────────
+  'Arithmetic (Order of Operations)':{
+    facts:'Use PEMDAS: Parentheses → Exponents → Multiply/Divide (left to right) → Add/Subtract (left to right).',
+    tips:'Always handle what\'s inside parentheses first. Multiplication and division are done together, left to right — same for addition and subtraction.',
+    ex:'8 + 9 × (2 × 5) = 8 + 9 × 10 = 8 + 90 = 98. (Multiply inside parentheses first, then multiply 9 × 10, then add.)'
+  },
+  'Arithmetic (Money & Coins)':{
+    facts:'Penny = 1¢, Nickel = 5¢, Dime = 10¢, Quarter = 25¢. Convert to cents, then add or subtract.',
+    tips:'Always work in the same unit (cents or dollars). Double-check: cents ÷ 100 = dollars.',
+    ex:'3 nickels + 4 dimes + 1 quarter = 15 + 40 + 25 = 80¢. Put in 40¢ → 80 − 40 = 40¢ left.'
+  },
+  'Arithmetic (Addition)':{
+    facts:'Line up digits by place value. Add ones, then tens, then hundreds, carrying when a column exceeds 9.',
+    tips:'Estimate first (round to nearest hundred) to check your answer makes sense.',
+    ex:'365 + 1,678: ones 5+8=13 (write 3, carry 1), tens 6+7+1=14 (write 4, carry 1), hundreds 3+6+1=10 → 2,043.'
+  },
+  'Arithmetic (Fractions — Dividing)':{
+    facts:'15.9 ÷ 2 = 7.95. Convert: 7.95 = 7 + 19/20 (since .95 = 95/100 = 19/20).',
+    tips:'To divide a mixed number by a whole number, convert to an improper fraction first or just divide the decimal.',
+    ex:'Rope 15.9 ft cut in half: 15.9 ÷ 2 = 7.95 = 7 19/20 ft.'
+  },
+  'Arithmetic (Multiplication)':{
+    facts:'Use the standard algorithm or break numbers apart (distributive property).',
+    tips:'Check by estimation: 35 × 42 ≈ 35 × 40 = 1,400, so 1,470 is reasonable.',
+    ex:'35 × 42 = 35 × 40 + 35 × 2 = 1,400 + 70 = 1,470.'
+  },
+  'Arithmetic (Multiplication of Decimals)':{
+    facts:'Multiply as if decimals aren\'t there, then count total decimal places and insert the point.',
+    tips:'75.6 × 90: think of it as 756 × 9 = 6,804, then adjust decimal → 6,804. Or: 7.56 × 900 = 6,804.',
+    ex:'75.6 × 90 = 7.56 × 900 = 6,804.'
+  },
+  'Arithmetic (Adding Decimals & Fractions)':{
+    facts:'Line up decimal points and add. To add a mixed number, convert to improper fraction or add parts separately.',
+    tips:'3.3 + 1.5 = 4.8. To express as a fraction: 4.8 = 4 8/10 = 4 4/5.',
+    ex:'3.3 + 1.5 = 4.8 = 4 4/5.'
+  },
+  // ── Number Sense ────────────────────────────────────────────
+  'Number Sense (Fractions & Decimals)':{
+    facts:'To convert a fraction to a decimal, divide numerator by denominator. 3/4 = 3 ÷ 4 = 0.75.',
+    tips:'Memorize common fractions: 1/2=0.5, 1/4=0.25, 3/4=0.75, 1/5=0.2, 1/8=0.125.',
+    ex:'3/4: divide 3 ÷ 4 = 0.75. Not 0.34, not 0.66, not 3.33.'
+  },
+  'Number Sense (Patterns & Sequences)':{
+    facts:'Look at the differences between terms. If differences grow by a fixed amount, add the next difference.',
+    tips:'Write out: 1, 4, 10, 22, 46, __. Differences: 3, 6, 12, 24 (each doubles). Next diff = 48. Answer = 46 + 48 = 94.',
+    ex:'Sequence 1, 4, 10, 22, 46 → next = 94.'
+  },
+  'Number Sense (Decimals & Number Lines)':{
+    facts:'Find the scale: divide the labeled range by the number of intervals. Each tick = one interval.',
+    tips:'Count the tick marks between labeled values carefully. The scale tells you what each tick is worth.',
+    ex:'Number line from 2.0 to 4.4 with 12 intervals: each tick = 0.2. Arrow at tick 6 from 2.0 → 2.0 + 1.2 = 3.2.'
+  },
+  'Number Sense (Fractions between values)':{
+    facts:'Convert all fractions to decimals to compare. Find one whose decimal falls between the two targets.',
+    tips:'5/9 ≈ 0.556, 19/27 ≈ 0.704. Need a fraction between these. 2/3 ≈ 0.667 → fits!',
+    ex:'Which fraction is between 5/9 and 19/27? → 2/3 = 0.667 ✓'
+  },
+  'Number Sense (Fractions — Closest to 3/4)':{
+    facts:'3/4 of 1,900 km = 1,425 km. Find the listed distance closest to 1,425.',
+    tips:'Multiply: 3/4 × 1,900 = (3 × 1,900)/4 = 5,700/4 = 1,425. Then compare: 1,450 is closest.',
+    ex:'3/4 × 1,900 = 1,425. Main Street = 1,450 km — closest!'
+  },
+  'Number Sense (Fractions of Shapes)':{
+    facts:'Count total squares in the shape, then count shaded squares. Fraction = shaded/total.',
+    tips:'Simplify the fraction: 5/25 = 1/5.',
+    ex:'5x5 grid = 25 squares total. 5 shaded = 5/25 = 1/5.'
+  },
+  'Number Sense (Comparing Fractions)':{
+    facts:'Convert fractions to decimals or find a common denominator. 14/30 = 7/15 ≈ 0.467 (smallest).',
+    tips:'To find the smallest fraction quickly, convert each to a decimal and pick the lowest.',
+    ex:'2/3 ≈ 0.667, 14/30 ≈ 0.467, 4/7 ≈ 0.571, 5/10 = 0.5. Smallest = 14/30.'
+  },
+  'Number Sense (Number Lines)':{
+    facts:'Find the scale, then use the labeled positions to identify unmarked points.',
+    tips:'Points A and B near 125 and 128 on a wider number line: count the intervals carefully. Each interval could represent 1.',
+    ex:'Number line near 125–128: if A is 3 ticks left of 128 and each tick = 1, then A = 125 → check options.'
+  },
+  'Number Sense (Function Tables)':{
+    facts:'Find the rule by testing what operation connects each input to its output. Test ALL rows.',
+    tips:'y = x/2 + 1: test with x=2 → 2/2+1=2 ✓, x=4 → 4/2+1=3 ✓, x=8 → 5 ✓.',
+    ex:'Table: 2→2, 4→3, 8→5, 14→8, 22→12. Rule: y = x/2 + 1.'
+  },
+  'Number Properties (Prime & Composite Numbers)':{
+    facts:'Prime = divisible only by 1 and itself. Composite = has more than 2 factors. 11 is odd AND prime.',
+    tips:'Odd numbers are not automatically prime (e.g., 9 = 3×3 is composite). Even numbers > 2 are always composite.',
+    ex:'11 is divisible only by 1 and 11 → prime. It\'s also odd. So 11 is odd and prime.'
+  },
+  'Number Properties (Properties of Operations)':{
+    facts:'Commutative: a+b=b+a, a×b=b×a. Associative: (a+b)+c=a+(b+c). Distributive: a(b+c)=ab+ac.',
+    tips:'If the ORDER of numbers is swapped but the operation stays the same, that\'s commutative.',
+    ex:'(♦×♣)×♥ = (♥×♦)×♣ → the factors are rearranged = commutative property.'
+  },
+  // ── Algebra ─────────────────────────────────────────────────
+  'Algebra (Distributive Property)':{
+    facts:'a × (b + c) = a×b + a×c. Each term inside the parentheses gets multiplied by the outside factor.',
+    tips:'15 × (8+6) = (15×8) + (15×6) = 120 + 90 = 210.',
+    ex:'15 × (8+6): distribute → (15×8)+(15×6).'
+  },
+  'Algebra (Word Problems — Division)':{
+    facts:'Read carefully: "21 shared equally among 7" → 21 ÷ 7 = 3 per person.',
+    tips:'Match the story structure to the equation. "Shared equally" = division. "Each gets" = quotient.',
+    ex:'21 ÷ 7 = 3. Story: 21 gum pieces shared among 7 friends → each gets 3.'
+  },
+  'Algebra (Word Problems — Weights)':{
+    facts:'Set up equations from the relationships. If H = 2S and W = 3S, then H+W+S = 2S+3S+S = 6S.',
+    tips:'Express everything in terms of one variable (the screwdriver weight), then solve.',
+    ex:'6S = 12 oz → S = 2 oz. The screwdriver weighs 2 ounces.'
+  },
+  'Algebra (Variables & Equations)':{
+    facts:'To solve for a variable, use inverse operations. If 4a = 8, divide both sides by 4: a = 2.',
+    tips:'After finding each variable, re-read the question — it may ask for their sum or product.',
+    ex:'4a=8 → a=2. 2+b=3 → b=1. Sum = a+b = 3.'
+  },
+  'Algebra (Writing Equations)':{
+    facts:'Translate words into math symbols. "4 less than half a number" = n/2 − 4. "2 more than the number" = n + 2.',
+    tips:'Identify what equals what: "4 less than half n equals 2 more than n" → n/2 − 4 = n + 2.',
+    ex:'"4 less than half a number is equal to 2 more than the number" → a/2 − 4 = a + 2.'
+  },
+  'Algebra (Function Tables)':{
+    facts:'Test each possible rule against ALL rows of the table. One wrong row eliminates that rule.',
+    tips:'Rule 3●−3: test with 1→0✓, 2→3✓, 4→9✓, 10→27✓, 26→75✓.',
+    ex:'Table 1→0, 2→3, 4→9: rule is 3×input−3.'
+  },
+  'Algebra (Systems of Equations)':{
+    facts:'Use the value of one variable from one equation to find the other. Substitute carefully.',
+    tips:'If ☺=3 and 3●+2☺=18 → 3●+6=18 → 3●=12 → ●=4.',
+    ex:'3●+2☺=18, ☺=3. Substitute: 3●+6=18, so ●=4.'
+  },
+  'Algebra (Solving Equations)':{
+    facts:'Get the variable alone by doing the same operation to both sides. Check by plugging back in.',
+    tips:'If 8 = 4m − 8, add 8 to both sides: 16 = 4m, divide by 4: m = 4.',
+    ex:'8 = 4m − 8 → 16 = 4m → m = 4.'
+  },
+  'Algebra (Multi-Step Word Problems)':{
+    facts:'Break the problem into steps. Find what each variable must be, then answer the actual question.',
+    tips:'Mints=m, gummies=2m, chocolates=6m. Total = 9m = 18 → m = 2.',
+    ex:'18 pieces: choc=3×gum=6m, gum=2×mint=2m, mint=m. 9m=18 → mint=2.'
+  },
+  'Algebra (Triangle Area Formula)':{
+    facts:'Area = (base × height) ÷ 2. Rearrange: height = (2 × Area) ÷ base.',
+    tips:'To find height from area and base: h = 2A/b. Divide area by base first, then multiply by 2.',
+    ex:'A = bh/2 → h = 2A/b.'
+  },
+  'Algebra (Averages — Chocolate Shop)':{
+    facts:'Average = sum ÷ count. If avg of two types = 12, then total = 24. Find the unknown type.',
+    tips:'(milk + dark) ÷ 2 = 12 → milk + dark = 24. Sold 10 milk → dark = 14.',
+    ex:'avg=12 each type means total=24. 10 milk + dark = 24 → dark = 14.'
+  },
+  // ── Statistics & Data ────────────────────────────────────────
+  'Statistics (Mean & Average)':{
+    facts:'Mean = sum of all values ÷ number of values. Every value counts equally.',
+    tips:'Add all numbers first, then divide. Watch for mixed numbers — convert to decimals first.',
+    ex:'Dataset 2,3,5,6,7,7: sum=30, count=6, mean=5.'
+  },
+  'Statistics (Range)':{
+    facts:'Range = largest value − smallest value. Only two numbers matter: max and min.',
+    tips:'Look at the entire dataset — find the highest and lowest, then subtract.',
+    ex:'Lunch data: max=56, min=6. Range = 56 − 6 = 50.'
+  },
+  'Statistics (Range from Table)':{
+    facts:'Scan the entire table to find the highest and lowest numbers. Range = max − min.',
+    tips:'Don\'t just look at one row or column — check everything.',
+    ex:'Student Lunch table: highest=56, lowest=6. Range=56−6=50.'
+  },
+  'Statistics (Median — Kale Price)':{
+    facts:'Median = the middle value when data is sorted. With 6 values, median = average of 3rd and 4th.',
+    tips:'Sort the values, then find the middle. For an even count, average the two middle values.',
+    ex:'Prices sorted: 4,6,8,10,10,15. Middle two: 8 and 10. Median = (8+10)/2 = 9.'
+  },
+  // ── Geometry ─────────────────────────────────────────────────
+  'Geometry (Vertices of a Cube)':{
+    facts:'A cube has 6 faces, 12 edges, and 8 vertices (corners). Count corners = 8.',
+    tips:'Vertices = corners. A cube has 4 on top and 4 on the bottom = 8 total.',
+    ex:'Cube: 8 vertices.'
+  },
+  'Geometry (Area of Rectangles)':{
+    facts:'Area = length × width. For Ana\'s 10.5 ft × 5 ft room: Area = 52.5 ft².',
+    tips:'Multiply the two dimensions. Remember units are squared (ft²).',
+    ex:'10.5 × 5 = 52.5 ft².'
+  },
+  'Geometry (Classifying Quadrilaterals)':{
+    facts:'Trapezoid: one pair of parallel sides. Parallelogram: two pairs. Rectangle: right angles. Rhombus: equal sides.',
+    tips:'The shape with one pair of parallel sides and no right angles is a trapezoid.',
+    ex:'A shape with one slanted side and one flat bottom with unequal top/bottom = trapezoid.'
+  },
+  'Geometry (Perimeter of Equilateral Triangle)':{
+    facts:'All three sides of an equilateral triangle are equal. Perimeter = 3 × side length.',
+    tips:'If tick marks show equal sides, all are equal. Perimeter = side × 3.',
+    ex:'Equilateral triangle with each side = 6 ft: Perimeter = 3 × 6 = 18 ft.'
+  },
+  'Geometry (Perimeter & Rectangles)':{
+    facts:'Perimeter = 2(length + width). Solve for the unknown side if you know perimeter and one side.',
+    tips:'P = 2(l + w) → l + w = P/2 → w = P/2 − l.',
+    ex:'P=30, length=12: 30 = 2(12+w) → 30 = 2(12)+2w → matches option D.'
+  },
+  'Geometry (Perimeter & Area)':{
+    facts:'For a square: perimeter = 4×side. Side = P÷4. If perimeter = 16w, side = 4w.',
+    tips:'Perimeter 16w means each side = 16w/4 = 4w.',
+    ex:'Perimeter of square = 16w → side = 4w.'
+  },
+  'Geometry (Perimeter & Composite Figures)':{
+    facts:'Perimeter = sum of all outer sides. For an irregular shape, trace every outer edge.',
+    tips:'For the pentagon: add 5in + 4in + 3in + missing = 16.5. Missing = 16.5 − 12 = 4.5 in.',
+    ex:'Perimeter 16.5 = 5+4+3+? → missing side = 4.5 in.'
+  },
+  'Geometry (Classifying Shapes)':{
+    facts:'A quadrilateral is any 4-sided shape. A rectangle is a special quadrilateral with right angles.',
+    tips:'The most general term for a 4-sided shape is quadrilateral. Any 4-sided figure qualifies.',
+    ex:'A rectangle is a quadrilateral (and also a parallelogram and a rectangle).'
+  },
+  'Geometry (Area of Composite Figures)':{
+    facts:'Break the shape into simple rectangles or squares. Find each area, then add (or subtract for cutouts).',
+    tips:'Two overlapping squares: total area = area of both squares minus the overlap.',
+    ex:'Two 5×5 squares with 2×2 overlap. Shaded (non-overlapping) = (25−4)+(25−4) = 42.'
+  },
+  'Geometry (Lines of Symmetry)':{
+    facts:'A line of symmetry divides a shape into two mirror images. Some shapes have many, some have none.',
+    tips:'Arrow: 1 line (horizontal). Aries ♈ symbol: 1 line (vertical). Both = 1 = match!',
+    ex:'Pair with same symmetry lines: arrow (1) and Aries symbol (1) → both have 1.'
+  },
+  'Geometry (Spatial Reasoning)':{
+    facts:'To complete a shape into a square or rectangle, visualize what piece fills the missing section.',
+    tips:'Find the overall shape needed, then subtract what\'s already there to find the missing piece.',
+    ex:'Look at which answer piece, when combined with the given shape, creates a complete square/rectangle.'
+  },
+  'Geometry (Volume of Rectangular Boxes)':{
+    facts:'Volume = length × width × height. If 8 small boxes fit in a large box, divide large volume by 8.',
+    tips:'Large box volume = 16 units³. Each small box = 16 ÷ 8 = 2 units³.',
+    ex:'16 units³ ÷ 8 small boxes = 2 units³ each.'
+  },
+  'Geometry (Line Segments)':{
+    facts:'Total length = sum of all segments. Use variables: if AB=x, BC=y, BD=z, then CD=BD−BC=z−y. AD=AB+BC+CD=x+z.',
+    tips:'Express CD in terms of given variables, then add all segments for the total.',
+    ex:'AB=x, BC=y, BD=z. CD=z−y. AD=x+y+(z−y)=x+z.'
+  },
+  'Geometry (Unit Squares)':{
+    facts:'A square with side 3 unit squares has 3×3 = 9 unit squares total.',
+    tips:'Square the side length to find the number of unit squares.',
+    ex:'Square with side 3 → 3² = 9 unit squares.'
+  },
+  'Geometry (Triangle Area Formula)':{
+    facts:'Area = (1/2) × base × height. Height = (2 × Area) / base = 2A/b.',
+    tips:'Rearrange the formula: multiply both sides by 2, then divide by base.',
+    ex:'A = bh/2 → 2A = bh → h = 2A/b.'
+  },
+  'Geometry (Counting Quadrilaterals)':{
+    facts:'Count every distinct 4-sided figure that can be traced using the given points and line segments.',
+    tips:'Systematically try all combinations of 4 points. Count each unique quadrilateral once.',
+    ex:'From points A,B,C,D,E,F using given lines: count each valid 4-sided polygon.'
+  },
+  'Geometry (Perimeter of Polygons)':{
+    facts:'Perimeter = sum of all sides. For a pentagon with sides 5, 4, 3, and a missing side: P = sum of all.',
+    tips:'16.5 = 5 + 4 + 3 + ? → ? = 16.5 − 12 = 4.5 in.',
+    ex:'Perimeter = 16.5. Known sides = 12. Missing side = 4.5 in.'
+  },
+  // ── Data Interpretation ──────────────────────────────────────
+  'Data Interpretation (Tables)':{
+    facts:'Read the table header carefully. Use exact values from the correct row and column.',
+    tips:'Check what unit the table uses. Multiply or divide if the question asks for a different unit.',
+    ex:'Concession stand table: Zach bought 5 sodas at $2 each. Tyler had $6 → 3 sodas, William $8 → 4. Total = 7.'
+  },
+  'Data Interpretation (Tables — Sprinting Speed)':{
+    facts:'Find the pattern: what changes between rows? Apply the pattern to predict the next row.',
+    tips:'Sprinting: 20, 16, 14, 13. Decrease by 4, then 2, then 1 — pattern slows. Next decrease ≈ 0.5. 13−0.5=12.5.',
+    ex:'Track table: speed at 10 min = 12.50 km/hr.'
+  },
+  'Data Interpretation (Circle Graphs)':{
+    facts:'A circle graph (pie chart) shows parts of a whole as sectors. The sector size = fraction × total.',
+    tips:'Estimate the fraction of the circle that the sector covers, then multiply by the total.',
+    ex:'Vanilla sector looks like ~1/4 of pie. 1/4 × 600 = 150 students.'
+  },
+  'Data Interpretation (Circle Graphs — Ice Cream)':{
+    facts:'Estimate the sector as a fraction of the whole circle. Multiply by total count.',
+    tips:'If vanilla appears to be about 1/4 of the pie chart, then 600 × 1/4 = 150.',
+    ex:'600 students, vanilla ≈ 1/4 → ~150 students voted for vanilla.'
+  },
+  'Data Interpretation (Bar Graphs)':{
+    facts:'Read bar heights carefully. The labeled scale tells you the value of each bar.',
+    tips:'For "which statement is FALSE," test each statement against the bar heights one by one.',
+    ex:'Effy\'s miles: Week 1=12, 2=4, 3=16, 4=8, 5=12. First+Last=24. Other weeks=28. C is FALSE.'
+  },
+  'Data Interpretation (Venn Diagrams)':{
+    facts:'The overlap region contains items that belong to BOTH groups at the same time.',
+    tips:'If circles are "sour candies" and "lollipops or jelly beans," the overlap = sour AND (lollipop or jelly bean).',
+    ex:'Overlap: sour jelly bean (it\'s sour AND it\'s a jelly bean).'
+  },
+  'Data Interpretation (Liquid Volume — Juice Box)':{
+    facts:'The figure shows how full the box is. 150 mL = what\'s remaining. Use the visual to find the full amount.',
+    tips:'If the box appears about 60% full after drinking, then 150 mL = 60% → full = 250 mL → drank = 100 mL.',
+    ex:'150 mL left. Box was full. Figure shows ~60% remaining → full = 250 mL → drank = 100 mL.'
+  },
+  'Data Interpretation (Ocean Depths)':{
+    facts:'Pacific Ocean depth = 36,198 ft. Find 1/5 = 7,239.6 ft. Red Sea = 7,254 ft — closest.',
+    tips:'Multiply: 36,198 × (1/5) ≈ 7,240. Compare to each option.',
+    ex:'1/5 of 36,198 ≈ 7,240. Red Sea (7,254) is closest.'
+  },
+  'Data Interpretation (Pictographs)':{
+    facts:'Each symbol represents a fixed number of items. Count symbols per row, multiply by the symbol value.',
+    tips:'Nulman = 5 symbols × 8 slices = 40. Fredrickson = 3 symbols × 8 = 24. Difference = 16.',
+    ex:'Each pizza = 8 slices. Nulman: 5 pizzas = 40 slices. Fredrickson: 3 = 24 slices. Diff = 16.'
+  },
+  'Data Interpretation (Line Graphs — Kitten)':{
+    facts:'Read the value of y at the given x. Use the trend (linear growth) to interpolate missing values.',
+    tips:'Graph shows linear growth: 1 wk=4, 2 wk=6 (add 2 per week). At 5 weeks: 4+(5−1)×2=12.',
+    ex:'Kitten: 1wk=4oz, 2wk=6oz. Pattern: +2oz/week. At 5 weeks: 4+8=12oz.'
+  },
+  // ── Probability ──────────────────────────────────────────────
+  'Probability (Marble Drawing)':{
+    facts:'P(event) = favorable outcomes / total outcomes. Simplify the fraction.',
+    tips:'Count total marbles from the diagram, count white ones, write the fraction.',
+    ex:'4 white out of 11 total → P(white) = 4/11.'
+  },
+  'Probability (Marble Colors)':{
+    facts:'P(red) = 5/12. Find the combination where red/total = 5/12 (or a multiple).',
+    tips:'Test each option: 20 red and 28 others = 48 total. 20/48 = 5/12 ✓.',
+    ex:'20 red out of 48 total: 20/48 = 5/12. Answer: 20 red and 28 others.'
+  },
+  'Probability (Jukebox Songs)':{
+    facts:'P(not pop) = 1 − P(pop). 7/10 pop → 3/10 not pop. 3/10 × 90 = 27.',
+    tips:'Find the fraction for "not pop" first, then multiply by the total.',
+    ex:'90 songs, 7/10 pop → not pop = 3/10 × 90 = 27.'
+  },
+  'Probability (Boys and Girls)':{
+    facts:'P(boy) = 2/5. Find which group size gives boys/(boys+girls) = 2/5.',
+    tips:'Test: 8 boys, 12 girls = 20 total. 8/20 = 2/5 ✓.',
+    ex:'8 boys + 12 girls = 20 total. 8/20 = 2/5 → matches!'
+  },
+  'Probability (Coin Flipping)':{
+    facts:'Fair coin: P(heads) = P(tails) = 1/2. With 100 flips, expect ~50 heads and ~50 tails.',
+    tips:'The result won\'t be exactly 50/50, but it should be close. 47/53 is reasonable; 94/6 is not.',
+    ex:'100 flips of a fair coin → most likely outcome: ~47 heads, ~53 tails.'
+  },
+  // ── Rates & Ratios ───────────────────────────────────────────
+  'Rates & Ratios (Snail Speed)':{
+    facts:'Rate = distance/time. If 3.5 cm takes 5 min, then 14 cm takes (14/3.5) × 5 = 4 × 5 = 20 min.',
+    tips:'Find how many "chunks" of distance, multiply by the time per chunk.',
+    ex:'3.5 cm per 5 min → 14 cm = 4 chunks → 4 × 5 min = 20 min.'
+  },
+  'Rates & Ratios (Distance & Time)':{
+    facts:'Distance is proportional to time at constant speed. If Zach takes 33 min and lives 3× farther, Andrea takes 33/3=11 min.',
+    tips:'Distance ratio = time ratio when speed is constant.',
+    ex:'Zach=33 min, 3× farther. Andrea = 33/3 = 11 min.'
+  },
+  'Rates & Ratios (Scale & Maps)':{
+    facts:'Set up a proportion: real distance₁ / map distance₁ = real distance₂ / map distance₂.',
+    tips:'11 km = 5.75 cm. For 66 km: 66/11 = 6 → 6 × 5.75 = 34.5 cm.',
+    ex:'11 km ↔ 5.75 cm. 66 km = 6 × 11 → 6 × 5.75 = 34.5 cm.'
+  },
+  // ── Estimation ───────────────────────────────────────────────
+  'Estimation & Approximation':{
+    facts:'Round each number to 1 or 2 significant figures, then calculate. The answer should be close to a given range.',
+    tips:'27 × 189 / 59 ≈ 27 × 180 / 60 = 27 × 3 = 81 → between 50 and 150.',
+    ex:'27×189/59 ≈ 81. Jason\'s candy: 47+112+695+619+98+51 ≈ 1,622 → between 1,500-2,000.'
+  },
+  // ── Coordinate Geometry ──────────────────────────────────────
+  'Coordinate Geometry (Plotting Points)':{
+    facts:'On a coordinate grid, point (x,y): move x units left/right (x-axis), then y units up/down (y-axis).',
+    tips:'Remember: x is horizontal, y is vertical. Negative x = left, negative y = down.',
+    ex:'Point B at (2,3) means 2 right and 3 up from the origin.'
+  },
+  // ── Number Theory ────────────────────────────────────────────
+  'Number Theory (Prime Numbers)':{
+    facts:'A prime number is divisible only by 1 and itself. Between 11 and 17 (exclusive): only 13 is prime.',
+    tips:'Check: 12=3×4, 14=2×7, 15=3×5, 16=4×4. Only 13 has no factors other than 1 and 13.',
+    ex:'Prime between 11 and 17 (not including 11 or 17): 13.'
+  },
+  'Arithmetic (Division Expressions)':{
+    facts:'a÷b = a × (1/b). So (2+3)÷4 = 5÷4 = 5 × (1/4).',
+    tips:'Division by a number equals multiplication by its reciprocal.',
+    ex:'(2+3)÷4 = 5/4 = 5 × (1/4).'
+  }
+,
+  'D': {
+    // Passage 1 (Q1-5): The Great Barrier Reef
+    1:{skill:"Main Idea & Author\'s Purpose",passage:'The Great Barrier Reef',correct:'(C) the importance and current threats to the Great Barrier Reef',why:'Every paragraph covers the reef — its size, its biodiversity, the zooxanthellae relationship, and the bleaching crisis. C captures the full scope. A (Australia\'s coastline) is too narrow. B (fish and sea turtles) is just one detail. D (why scientists study temperatures) misses the main focus.'},
+    2:{skill:'Evidence & Supporting Details',passage:'The Great Barrier Reef',correct:'(D) provide energy to coral through photosynthesis',why:'The passage directly states: "these algae provide the coral with energy through photosynthesis." D is directly supported. A (build calcium skeletons) is what the coral does, not the algae. B (attract fish) is not stated. C (keep ocean temperature stable) is not mentioned.'},
+    3:{skill:'Vocabulary in Context',passage:'The Great Barrier Reef',correct:'(B) mutually beneficial',why:'"Symbiotic" describes a relationship where both the coral and the zooxanthellae benefit — the algae get shelter and the coral gets energy. Mutually beneficial = both parties gain. Destructive (A) is the opposite. One-sided (C) would mean only one benefits. Competitive (D) means they compete.'},
+    4:{skill:'Inference',passage:'The Great Barrier Reef',correct:'(A) Human activities have contributed to the decline of the Great Barrier Reef',why:'The passage cites climate change — caused by human carbon emissions — as the reason for coral bleaching. Scientists are working to "reduce carbon emissions," confirming the human role. B (full recovery guaranteed) is too certain. C (largest of all reefs) is stated but not a supported conclusion about decline. D (zooxanthellae are animals) is incorrect.'},
+    5:{skill:'Tone & Attitude',passage:'The Great Barrier Reef',correct:'(D) concerned and admiring',why:'The author describes the reef in glowing terms ("extraordinary variety," "remarkable biodiversity") and ends with urgency about conservation. This is both admiring and concerned. Humorous (A) is not present. Indifferent (B) is the opposite — the author clearly cares. Critical and pessimistic (C) is too negative — the tone also admires the reef.'},
+    // Passage 2 (Q6-10): A Life of Invention — Thomas Edison
+    6:{skill:"Main Idea & Author\'s Purpose",passage:'A Life of Invention',correct:'(B) describe the life and achievements of Thomas Edison',why:'All three paragraphs focus on Edison — his childhood, his famous inventions, and his research lab. B captures the full sweep. A (compare to other scientists) never happens. C (explain the light bulb) is only one paragraph. D (argue the lab changed modern science) is a detail, not the main purpose.'},
+    7:{skill:"Author\'s Purpose for a Detail",passage:'A Life of Invention',correct:'(D) To suggest that his home education actually benefited him',why:'The passage states "far from being a setback, this unconventional education allowed Edison to pursue his own interests with great intensity" — the author presents this as a positive. D captures the author\'s intent. A (why he never went to college) is not stated. B (poorly educated) contradicts the passage. C (not as smart) contradicts the passage.'},
+    8:{skill:'Evidence & Supporting Details',passage:'A Life of Invention',correct:'(A) It required thousands of experiments before succeeding',why:'The passage directly states Edison "tested more than 6,000 different materials." A is directly supported. B (invented in a single afternoon) is the opposite. C (bamboo was the first material) contradicts the passage — it was the final choice after 6,000 tries. D (least important invention) contradicts the passage.'},
+    9:{skill:'Inference',passage:'A Life of Invention',correct:'(C) viewed setbacks as part of the path to success',why:'Calling failed attempts "ways that won\'t work" frames each failure as useful information, not defeat. C is the correct inference. A (gave up easily) is the opposite. B (discouraged by failures) contradicts the optimistic framing. D (preferred to work alone) is contradicted by paragraph 3, which says he surrounded himself with scientists.'},
+    10:{skill:'Vocabulary in Context',passage:'A Life of Invention',correct:'(B) done alone',why:'"Invention was not a solitary act but a collaborative effort" — here "solitary" is directly contrasted with "collaborative." Solitary = done alone, without others. A (creative) is unrelated. C (dangerous) is unrelated. D (widely celebrated) is unrelated.'},
+    // Passage 3 (Q11-15): The Decision — Maya\'s Garden
+    11:{skill:'Inference',passage:"The Decision",correct:'(A) proud of what she has created',why:'Maya surveys tomatoes, tall sunflowers, fragrant herbs, and a neighborhood that "seemed brighter" — all signs of accomplishment and pride. A is supported. B (bored) contradicts the rich, loving description. C (worried plants haven\'t grown) is the opposite of the thriving garden described. D (eager to sell) is contradicted by everything about her attachment.'},
+    12:{skill:'Evidence & Supporting Details',passage:"The Decision",correct:'(C) The city plans to remove the garden to build a parking structure',why:'The passage directly states "the lot was scheduled to be sold to a developer who planned to build a parking structure." C is directly supported. A (plants dying) contradicts the thriving garden. B (she and Mr. Okonkwo disagree) is the opposite — he supports her. D (can\'t decide) contradicts her resolve at the end.'},
+    13:{skill:"Author\'s Purpose for a Detail",passage:"The Decision",correct:'(D) To suggest that Maya should remain determined despite the challenge',why:'The sunflowers are "unbothered by anything the city might decide" — they stand tall regardless. This mirrors what Maya must choose: to stand firm. D captures the symbolic meaning. A (sunflowers grow better) ignores the context. B (Mr. Okonkwo admires them) is not supported. C (too beautiful to destroy) is not the author\'s point.'},
+    14:{skill:'Inference',passage:"The Decision",correct:'(B) They should take action by attending the city council meeting',why:'Mr. Okonkwo says "there is a city council meeting on Thursday. We bring everyone... and we make our case." "Show up" means literally going to the meeting and speaking. B matches this. A (early morning garden visits) ignores the meeting. C (building a fence) is not mentioned. D (taking it to court) is not mentioned.'},
+    15:{skill:'Tone & Attitude',passage:"The Decision",correct:'(A) determined',why:'Maya folds the letter and puts it in her pocket — a quiet, resolute gesture. She has chosen to act rather than give up. Mr. Okonkwo\'s words and the sunflower imagery both reinforce this. A (determined) fits perfectly. B (hopeless) is the opposite. C (confused) — she understands the situation clearly. D (cheerful) ignores the gravity of the threat.'}
+  },
+  // ── Clean-named aliases & new cards for all topic labels ──────────────
+  'Algebra (Word Problems)':{
+    facts:'Read carefully, identify what is being asked, then translate words into an equation.',
+    tips:'Look for key words: "times as many" = multiply, "shared equally" = divide, "sum" = add, "difference" = subtract.',
+    ex:'Cassie is 4 times as old as her dog (3). Cassie = 4×3 = 12. Sum = 12+3 = 15.'
+  },
+  'Algebra (Mean & Average)':{
+    facts:'Mean = sum of all values ÷ number of values. To find a missing value: missing = (mean × count) – sum of known values.',
+    tips:'Average of two people = total ÷ 2. If average = 29.5 and one person has 12, the other has (29.5×2) – 12 = 47.',
+    ex:'Average of Jasmine and mother = 29.5. Total = 59. Jasmine = 12. Mother = 59 – 12 = 47.'
+  },
+  'Algebra (Function Rules)':{
+    facts:'Find the rule by testing each input/output pair. The rule must work for ALL rows, not just one.',
+    tips:'Try rules like: output = input × n, output = input + n, output = input × n + n. Test with every row.',
+    ex:'Table: 1→1.5, 3→4.5, 8→12. Rule: output = input × 1.5.'
+  },
+  'Algebra (Properties)':{
+    facts:'Commutative: a+b=b+a. Associative: (a+b)+c=a+(b+c). Distributive: a(b+c)=ab+ac.',
+    tips:'If numbers are rearranged but the operation is the same, it\'s commutative. If grouping changes, it\'s associative.',
+    ex:'3 × (4 + 5) = 3×4 + 3×5 = 12 + 15 = 27 — this uses the distributive property.'
+  },
+  'Arithmetic (Fractions)':{
+    facts:'Add/subtract: find common denominator first. Multiply: multiply straight across. Divide: flip the second fraction and multiply.',
+    tips:'⅔ + ¾ = 8/12 + 9/12 = 17/12. Always simplify your answer.',
+    ex:'½ ÷ ¼ = ½ × 4/1 = 4/2 = 2. Dividing by a fraction = multiplying by its reciprocal.'
+  },
+  'Arithmetic (Decimals)':{
+    facts:'Line up decimal points when adding or subtracting. Count decimal places when multiplying.',
+    tips:'0.6 = 3/5. 0.75 = 3/4. 0.25 = 1/4. Memorize common decimal-fraction equivalents.',
+    ex:'0.6 + 0.75 = 1.35. Line up the decimal points: 0.60 + 0.75 = 1.35.'
+  },
+  'Arithmetic (Division)':{
+    facts:'Division tells you how many groups fit. If there is a remainder, check whether the question asks for complete groups or total pieces.',
+    tips:'60 ÷ 8 = 7 remainder 4. If the question asks for the fewest packs needed, round UP to 8.',
+    ex:'60 pencils ÷ 8 per pack = 7.5 → need 8 packs (you can\'t buy half a pack).'
+  },
+  'Arithmetic (Money)':{
+    facts:'Convert everything to cents or dollars before computing. Change = amount paid – total cost.',
+    tips:'4 shirts at $18 each = 4×18 = $72. Change from $100 = $100 – $72 = $28.',
+    ex:'$100 – (4 × $18) = $100 – $72 = $28 change.'
+  },
+  'Arithmetic (Properties)':{
+    facts:'Commutative: order doesn\'t matter (3+5 = 5+3). Associative: grouping doesn\'t matter. Distributive: a(b+c)=ab+ac.',
+    tips:'Use the distributive property to break apart harder multiplication: 6×13 = 6×10 + 6×3 = 60+18 = 78.',
+    ex:'(3-⅓)×6: distribute → 3×6 – ⅓×6 = 18 – 2 = 16.'
+  },
+  'Coordinate Geometry':{
+    facts:'On a coordinate grid, (x, y): move x units right (or left if negative), then y units up (or down if negative).',
+    tips:'To find the distance between two points on the same horizontal or vertical line, subtract the coordinates.',
+    ex:'A=(2,5) and B=(2,–3): same x, so distance = |5–(–3)| = 8.'
+  },
+  'Data Interpretation (Line Graphs)':{
+    facts:'Read the value at the specific point on the line. For a constant rate, use the slope between two known points.',
+    tips:'Find the rate of change (rise ÷ run), then apply it to find the missing value.',
+    ex:'Plant: Day 2=2cm, Day 4=5cm. Rate = 1.5 cm/day. At Day 7: 2 + (7–2)×1.5 = 2+7.5 = 9.5 ≈ check nearest answer.'
+  },
+  'Estimation':{
+    facts:'Round each number to 1–2 significant figures, then calculate. The answer should be close to one of the choices.',
+    tips:'2.25+3.9+6.8+4.9 ≈ 2+4+7+5 = 18. Always check: does your estimate land between two answer choices?',
+    ex:'2.25+3.9+6.8+4.9 ≈ 18 → "between 17 and 19 miles."'
+  },
+  'Geometry (3D Figures)':{
+    facts:'Volume of rectangular box = l×w×h. Surface area = 2(lw + lh + wh). A cube has 6 equal faces, 8 vertices, 12 edges.',
+    tips:'For word problems about 3D figures, identify the shape, write the formula, plug in the values.',
+    ex:'Box 4×3×2: volume = 24 cubic units. Cube with side 3: volume = 27 cubic units.'
+  },
+  'Geometry (Area)':{
+    facts:'Rectangle: A = l×w. Triangle: A = ½×b×h. Square: A = s². For composite shapes, add or subtract simpler areas.',
+    tips:'For an L-shape or cutout, find the full rectangle area and subtract the piece that was removed.',
+    ex:'9×4 rectangle with a 2×2 corner cut out: 36 – 4 = 32 cm².'
+  },
+  'Geometry (Area/Triangle)':{
+    facts:'Area of a triangle = ½ × base × height. Height must be perpendicular to the base.',
+    tips:'If given the area and base, find height: h = 2A ÷ base. If given legs of a right triangle, one leg is the base and the other is the height.',
+    ex:'Right triangle, legs 5cm and 12cm: A = ½×5×12 = 30 cm².'
+  },
+  'Geometry (Perimeter)':{
+    facts:'Perimeter = sum of all sides. Rectangle: P = 2(l+w). Square: P = 4s. Triangle: P = sum of 3 sides.',
+    tips:'If you know the perimeter and one side, use algebra. P=2(l+w) → w = P/2 – l.',
+    ex:'Rectangle P=36, length=11: 2(11+w)=36 → 11+w=18 → w=7 cm.'
+  },
+  'Geometry (Quadrilaterals)':{
+    facts:'Quadrilateral = any 4-sided figure. Square: 4 equal sides, 4 right angles. Rectangle: 4 right angles. Trapezoid: exactly one pair of parallel sides.',
+    tips:'A pentagon has 5 sides. A hexagon has 6 sides. Count the sides carefully.',
+    ex:'A shape with 5 sides is a pentagon. A shape with one pair of parallel sides is a trapezoid.'
+  },
+  'Geometry (Symmetry)':{
+    facts:'A line of symmetry divides a shape into two mirror-image halves. Regular polygons have as many lines of symmetry as they have sides.',
+    tips:'To find lines of symmetry: try folding the shape mentally in different directions — vertical, horizontal, diagonal.',
+    ex:'An equilateral triangle has 3 lines of symmetry. A circle has infinitely many. An arrow has 1.'
+  },
+  'Geometry (Volume)':{
+    facts:'Volume of a rectangular box = l×w×h. Volume of a cube = s³. If a large cube is divided into smaller cubes, divide the total volume by the number of small cubes.',
+    tips:'Large cube volume = 32 units, made of 8 smaller cubes: each small cube = 32÷8 = 4 cubic units.',
+    ex:'Cylinder: Volume = π × radius² × height. Diameter=6 → radius=3. Volume = π×3²×10 = 90π.'
+  },
+  'Number Sense (Fractions)':{
+    facts:'To compare fractions, convert to decimals or find a common denominator. To find a fraction of a number, multiply.',
+    tips:'¼ of 83 ≈ 20.75. The choir with 21 singers is closest. Always multiply (not divide) when finding a fraction of a total.',
+    ex:'¼ of 240 = 60. ½ of 16 = 8. ⅓ of 24 = 8.'
+  },
+  'Number Sense (Percentages)':{
+    facts:'Percent means "per hundred." To find a percent of a number: multiply by the decimal form. 15% = 0.15.',
+    tips:'15% of 240: 0.15 × 240 = 36. Or: 10% of 240 = 24, 5% = 12, so 15% = 36.',
+    ex:'15% of 240 = 36. 25% of 80 = 20. 50% of any number = that number ÷ 2.'
+  },
+  'Number Sense (Place Value)':{
+    facts:'Each digit\'s value depends on its position. Hundred-thousands, ten-thousands, thousands, hundreds, tens, ones.',
+    tips:'314,812 = 3 hundred-thousands + 1 ten-thousand + 4 thousands + 8 hundreds + 1 ten + 2 ones.',
+    ex:'"Three hundred fourteen thousand eight hundred twelve" = 314,812.'
+  },
+  'Number Theory (Divisibility)':{
+    facts:'Divisible by 2: ends in even number. By 3: digit sum divisible by 3. By 5: ends in 0 or 5. By 6: divisible by both 2 and 3.',
+    tips:'A composite number has more than 2 factors. A prime number has exactly 2 factors: 1 and itself.',
+    ex:'60 ÷ 8 = 7.5 — not divisible. So 8 packs are needed to get at least 60 pencils.'
+  },
+  'Probability':{
+    facts:'P(event) = favorable outcomes ÷ total outcomes. Always between 0 and 1. P=0 means impossible; P=1 means certain.',
+    tips:'Count total outcomes carefully. For a bag of marbles: total = all marbles combined.',
+    ex:'6 blue marbles out of 12 total: P(blue) = 6/12 = 1/2.'
+  },
+  'Rates & Ratios (Measurement)':{
+    facts:'Memorize conversions: 12 in = 1 ft, 3 ft = 1 yd, 1 mile = 5,280 ft. 4 cups = 1 qt, 4 qt = 1 gal.',
+    tips:'Convert to the same unit before comparing or adding. Multiply when going to a smaller unit, divide when going to a larger unit.',
+    ex:'2.5 gallons = 2.5 × 4 = 10 quarts = 10 × 2 = 20 pints.'
+  },
+  'Rates & Ratios (Proportions)':{
+    facts:'A proportion says two ratios are equal: a/b = c/d. Cross-multiply to solve: a×d = b×c.',
+    tips:'If 2 meters = 5 cm on a model, then 1.5 meters = (1.5÷2)×5 = 3.75 cm.',
+    ex:'2m bed = 5cm doll. 1.5m desk: (1.5/2)×5 = 3.75 cm.'
+  },
+  'Rates & Ratios (Scale & Ratios)':{
+    facts:'Scale: model distance × scale factor = real distance. Set up as a proportion and cross-multiply.',
+    tips:'If 1 cm = 8 km and cities are 6.5 cm apart: 6.5 × 8 = 52 km.',
+    ex:'1cm = 8km. 6.5cm apart → 6.5 × 8 = 52 km actual distance.'
+  },
+  'Rates & Ratios (Speed & Time)':{
+    facts:'Distance = Speed × Time. Speed = Distance ÷ Time. Time = Distance ÷ Speed.',
+    tips:'Amrita swims 200m in 5 min and is 2× as fast as Peter. Peter swims 100m. Total apart = 200+100 = 300m.',
+    ex:'Train at 60 mph for 2.5 hours: 60 × 2.5 = 150 miles.'
+  },
+  'Rates & Ratios (Time)':{
+    facts:'Time zones: add or subtract hours based on the direction. If NY is 3 hours ahead of LA, add 3 to LA time to get NY time.',
+    tips:'Always check whether you\'re converting forward (east) or backward (west).',
+    ex:'LA = 11:00 PM. NY = LA + 3 hours = 2:00 AM (next day).'
+  },
+  'Statistics (Mean)':{
+    facts:'Mean = sum of all values ÷ number of values. To find a missing value: total – sum of known values.',
+    tips:'Average of 5 things = 29.5 → total = 5×29.5 = 147.5. Subtract what you know to find the missing one.',
+    ex:'Mean of posters: (2 + 4.25 + 3.625 + 4 + 6.125) ÷ 5 = 20 ÷ 5 = 4.'
+  },
+  'Statistics (Median)':{
+    facts:'Median = the middle value when data is sorted. With an even count, average the two middle values.',
+    tips:'Always sort the data first! With 9 values, the median is the 5th. With 11 values, the 6th.',
+    ex:'Data sorted: 0,1,1,2,2,3,4,6 — wait, that\'s 8 values. Median = average of 4th and 5th = (2+2)/2 = 2.'
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SKILL STRATEGIES — for Reading Comprehension tips
+// ═══════════════════════════════════════════════════════════════
+const SKILL_STRATEGIES = {
+  "Main Idea & Author's Purpose":{icon:"📖",tips:["The main idea must be supported by the <strong>entire passage</strong>, not just one paragraph.","Ask: <em>why did the author write this?</em> Common purposes: to inform, to describe, to argue, to correct a misconception.","Eliminate choices that are too narrow (describe only one detail) or too broad (go beyond the text).","The first and last paragraphs often contain the main idea."]},
+  "Author's Purpose":{icon:"📖",tips:["Ask: <em>why did the author write this?</em>","The main purpose spans the whole passage — not just one section.","Common purposes: to inform, to describe, to argue, to correct a myth, to entertain.","Signal words: 'primarily,' 'mainly,' 'best describes the passage as a whole.'"]},
+  "Author's Purpose for a Detail":{icon:"🔎",tips:["Ask: <em>why does the author include THIS specific detail?</em>","Think about the effect on the reader: does it create contrast, support a point, provide evidence, or create a mood?","The answer should match the detail's purpose <em>within the passage</em>, not just its general meaning.","Ask: what would be lost if this detail were removed?"]},
+  "Inference":{icon:"💭",tips:["Inference = conclusion implied but NOT directly stated. It must be supported by the text.","Don't over-infer — stay close to what the passage actually says. Eliminate choices that require outside knowledge.","Ask: what is the most reasonable conclusion given <em>only</em> what's written?","Key phrases: 'the passage implies,' 'we can infer,' 'suggests.'"]},
+  "Vocabulary in Context":{icon:"📝",tips:["Never pick the most common definition — find the meaning that fits <strong>this sentence</strong>.","Substitute each answer choice back into the sentence to test which sounds right.","Look at the surrounding words and ideas for context clues.","The test often uses secondary or figurative meanings — read carefully."]},
+  "Paragraph Main Idea":{icon:"¶",tips:["Ask: what is <strong>this paragraph</strong> mainly about? (Not the whole passage.)","Every sentence in the paragraph should connect to the correct main idea.","Eliminate choices that describe only one sentence or detail within the paragraph.","Often the first or last sentence of the paragraph states its main idea."]},
+  "Evidence & Supporting Details":{icon:"🔍",tips:["Go back to the passage — find the specific sentence that proves or disproves each choice.","Don't rely on memory — locate the exact line first.","EXCEPT questions: find the three choices that ARE stated; the remaining one is the answer.","The correct answer is directly stated or clearly paraphrased — not just plausible."]},
+  "Text Structure":{icon:"🗂",tips:["Ask: how does the author organize this passage? (chronological, problem/solution, claim/evidence, etc.)","Look at how paragraphs connect: does each build on, contrast with, or explain the previous?","Common ISEE structures: topic intro → details → conclusion; founding → role → decline.","The structure often matches the author\'s purpose (informing → chronological; arguing → claim/evidence)."]},
+  "Tone & Attitude":{icon:"🎭",tips:["Tone = author\'s attitude. Look for emotionally charged words — positive or negative.","Positive charged words (dazzle, remarkable, surely) → approving or fascinated tone.","Negative charged words (mockery, atrocious, downright) → critical or indignant tone.","Common tones: fascinated, admiring, neutral/objective, critical, cautious, ironic."]}
+};
+
+// ═══════════════════════════════════════════════════════════════
+// CONCEPT CARD LOOKUP — exact → substring → keyword
+// ═══════════════════════════════════════════════════════════════
+function findConceptCard(topic) {
+  if (CONCEPT_CARDS[topic]) return CONCEPT_CARDS[topic];
+  // longest key that topic contains or that contains topic
+  let best = null, bestLen = 0;
+  for (const key of Object.keys(CONCEPT_CARDS)) {
+    if (topic.includes(key) || key.includes(topic)) {
+      if (key.length > bestLen) { best = key; bestLen = key.length; }
+    }
+  }
+  if (best) return CONCEPT_CARDS[best];
+  // word-level partial match
+  const words = topic.toLowerCase().split(/[\s()/&]+/).filter(w=>w.length>3);
+  for (const key of Object.keys(CONCEPT_CARDS)) {
+    const kl = key.toLowerCase();
+    for (const w of words) {
+      if (kl.includes(w) && key.length > bestLen) { best = key; bestLen = key.length; }
+    }
+  }
+  return best ? CONCEPT_CARDS[best] : null;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let selectedTest = null;
+let selectedSections = new Set();
+let studentAnswers = {};
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 2: SELECT TEST
+// ═══════════════════════════════════════════════════════════════
+function selectTest(t) {
+  selectedTest = t;
+  document.querySelectorAll('.test-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('btn-test-' + t);
+  if (btn) btn.classList.add('selected');
+  selectedSections = new Set();
+  studentAnswers = {};
+  buildSectionGrid();
+  document.getElementById('step3').classList.remove('hidden');
+  document.getElementById('step3').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 3: SECTION SELECTOR
+// ═══════════════════════════════════════════════════════════════
+function buildSectionGrid() {
+  const grid = document.getElementById('sectionGrid');
+  const sections = getActiveSections(selectedTest);
+  grid.innerHTML = '';
+  sections.forEach(sec => {
+    const div = document.createElement('div');
+    div.className = 'section-check';
+    div.id = 'sec-check-' + sec.num;
+    div.onclick = () => toggleSection(sec.num);
+    div.innerHTML = `
+      <div class="check-box">
+        <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+          <path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="section-label">${sec.label}</div>
+        <div class="section-sub-label">${sec.subLabel}</div>
+        <div class="section-count">${sec.total} questions</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+  updateFullTestBox();
+}
+
+function toggleSection(num) {
+  if (selectedSections.has(num)) selectedSections.delete(num);
+  else selectedSections.add(num);
+  document.getElementById('sec-check-' + num).classList.toggle('checked', selectedSections.has(num));
+  updateFullTestBox();
+}
+
+function updateFullTestBox() {
+  const sections = getActiveSections(selectedTest);
+  const allSelected = sections.every(s => selectedSections.has(s.num));
+  const row = document.getElementById('fullTestRow');
+  const box = document.getElementById('fullTestBox');
+  if (allSelected) { row.classList.add('full-checked'); box.style.background='var(--brand)'; box.style.borderColor='var(--brand)'; }
+  else { row.classList.remove('full-checked'); box.style.background=''; box.style.borderColor=''; }
+}
+
+function handleFullTestClick() {
+  const sections = getActiveSections(selectedTest);
+  const allSelected = sections.every(s => selectedSections.has(s.num));
+  if (allSelected) {
+    selectedSections.clear();
+    sections.forEach(s => document.getElementById('sec-check-' + s.num).classList.remove('checked'));
+  } else {
+    sections.forEach(s => { selectedSections.add(s.num); document.getElementById('sec-check-' + s.num).classList.add('checked'); });
+  }
+  updateFullTestBox();
+}
+
+function goToStep4() {
+  if (selectedSections.size === 0) { alert('Please select at least one section.'); return; }
+  buildAnswerTable();
+  document.getElementById('step4').classList.remove('hidden');
+  document.getElementById('step4').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 4: ANSWER ENTRY
+// ═══════════════════════════════════════════════════════════════
+function buildAnswerTable() {
+  const container = document.getElementById('answersContainer');
+  container.innerHTML = '';
+  const sections = getActiveSections(selectedTest);
+  const scStart = VR_SC_START[selectedTest] || 18;
+  const isDiag = selectedTest === 'D';
+
+  sections.filter(s => selectedSections.has(s.num)).forEach(sec => {
+    const keyData = ANSWER_KEYS[selectedTest] && ANSWER_KEYS[selectedTest][sec.num];
+    if (!keyData) return;
+
+    // Feedback section for Diagnostic
+    if (keyData.isFeedback) {
+      const fdiv = document.createElement('div');
+      fdiv.className = 'section-answers';
+      fdiv.id = 'section-answers-' + sec.num;
+      fdiv.innerHTML = `<div class="section-answers-title">Diagnostic Feedback <span class="section-badge">comfort rating</span></div>
+      <div style="padding:4px 0;">
+        ${['Math','Reading','Verbal'].map((lbl,i)=>`
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--cream2);">
+          <div style="font-size:14px;font-weight:600;color:var(--navy2);min-width:100px;">${lbl}</div>
+          <div style="display:flex;gap:8px;">
+            ${[[1,'😭'],[2,'😳'],[3,'😬'],[4,'🙂'],[5,'🥳']].map(([v,emoji])=>`<button onclick="this.parentNode.querySelectorAll('button').forEach(b=>{b.style.background='var(--cream)';b.style.borderColor='var(--cream2)';});this.style.background='var(--brand)';this.style.borderColor='var(--brand)';if(!studentAnswers['fb'])studentAnswers['fb']={};studentAnswers['fb'][${i+1}]=${v};" style="width:52px;height:52px;border:1.5px solid var(--cream2);border-radius:10px;cursor:pointer;font-size:22px;background:var(--cream);transition:all 0.15s;display:flex;align-items:center;justify-content:center;">${emoji}</button>`).join('')}
+          </div>
+          <div style="font-size:12px;color:var(--grey);">1 = very uncomfortable · 5 = very comfortable</div>
+        </div>`).join('')}
+      </div>`;
+      container.appendChild(fdiv);
+      return;
+    }
+
+    const correctAnswers = keyData.answers;
+    const topics = keyData.topics || [];
+    const total = correctAnswers.length;
+
+    // Sub-headers for VR
+    const subHeaders = [];
+    if (sec.abbr === 'VR') {
+      const scS = VR_SC_START[selectedTest] || 18;
+      subHeaders.push({start:1,    end:scS-1, label:'Part 1: Synonyms'});
+      subHeaders.push({start:scS, end:total,  label:'Part 2: Sentence Completion'});
+    }
+
+    const div = document.createElement('div');
+    div.className = 'section-answers';
+    div.id = 'section-answers-' + sec.num;
+
+    let html = `<div class="section-answers-title">${sec.label} <span class="section-badge">${total} Questions</span></div>
+    <div class="answer-table-wrap"><table class="answer-table">
+    <thead><tr>
+      <th>#</th><th>Your Answer</th><th>Correct Answer</th><th>Result</th><th>Topic</th>
+    </tr></thead><tbody>`;
+
+    for (let q = 1; q <= total; q++) {
+      // Insert sub-header row
+      subHeaders.forEach(sh => {
+        if (q === sh.start) {
+          html += `<tr><td colspan="5" style="background:var(--brand-light);padding:8px 12px;font-size:12px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:0.8px;">${sh.label}</td></tr>`;
+        }
+      });
+
+      const topicStr = topics[q-1] || '';
+      const displayTopic = (function(t) {
+        const synMatch = t.match(/^Synonym\s*\((.+)\)$/);
+        if (synMatch) return synMatch[1].trim().split('/').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('/');
+        const scMatch = t.match(/^Sentence Completion\s*\((.+)\)$/i);
+        if (scMatch) return scMatch[1].trim();
+        const baseMatch = t.match(/^([^(]+)/);
+        const base = baseMatch ? baseMatch[1].trim() : t;
+        if (!base) return t;
+        const firstParen = t.match(/\(([^)]+)\)/);
+        if (!firstParen) return base;
+        const concept = firstParen[1].split('/')[0].trim();
+        return `${base} (${concept})`;
+      })(topicStr);
+
+      const selId = `${selectedTest}-${sec.num}-${q}`;
+      html += `<tr id="tr-${selId}">
+        <td class="q-num-cell">${q}</td>
+        <td><select class="ans-select" id="sel-${selId}" onchange="handleAnswer('${selId}','${correctAnswers[q-1]}')">
+          <option value="">— Select —</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+          <option value="skip">Skip (—)</option>
+        </select></td>
+        <td style="font-weight:600;color:var(--navy2);">${correctAnswers[q-1]}</td>
+        <td><span class="result-badge none" id="badge-${selId}">—</span></td>
+        <td class="topic-cell">${displayTopic}</td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+
+  buildTimingInputs();
+}
+
+function buildTimingInputs() {
+  const c = document.getElementById('timingInputs');
+  c.innerHTML = '';
+  const sections = getActiveSections(selectedTest);
+  sections.filter(s => selectedSections.has(s.num) && !s.isFeedback).forEach(sec => {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<label style="font-size:13px;font-weight:600;color:var(--navy2);display:block;margin-bottom:6px;">${sec.label}</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" min="0" max="99" placeholder="min" id="time-min-${sec.num}"
+          style="width:70px;padding:8px 10px;border:1.5px solid #c8c4de;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--navy);background:var(--white);outline:none;"
+          oninput="this.style.borderColor='var(--brand)'">
+        <span style="font-size:13px;color:var(--grey);">min</span>
+        <input type="number" min="0" max="59" placeholder="sec" id="time-sec-${sec.num}"
+          style="width:70px;padding:8px 10px;border:1.5px solid #c8c4de;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--navy);background:var(--white);outline:none;"
+          oninput="this.style.borderColor='var(--brand)'">
+        <span style="font-size:13px;color:var(--grey);">sec</span>
+      </div>`;
+    c.appendChild(wrap);
+  });
+}
+
+function handleAnswer(selId, correct) {
+  const sel = document.getElementById('sel-' + selId);
+  const badge = document.getElementById('badge-' + selId);
+  const val = sel.value;
+  studentAnswers[selId] = val;
+  sel.className = 'ans-select';
+  if (val === '')     { badge.className = 'result-badge none';    badge.textContent = '—'; }
+  else if (val === 'skip') { sel.classList.add('sel-skip');  badge.className = 'result-badge skip';    badge.textContent = 'Skipped'; }
+  else if (val === correct) { sel.classList.add('sel-correct'); badge.className = 'result-badge correct'; badge.textContent = '✓ Correct'; }
+  else               { sel.classList.add('sel-wrong');  badge.className = 'result-badge wrong';   badge.textContent = '✗ Wrong'; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORT GENERATION
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// TOPIC FORMATTER — matches ML exactly
+// ═══════════════════════════════════════════════════════════════
+function fmtTopic(t) {
+  const synMatch = t.match(/^Synonym\s*\((.+)\)$/);
+  if (synMatch) return synMatch[1].trim().split('/').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('/');
+  const scMatch = t.match(/^Sentence Completion\s*\((.+)\)$/i);
+  if (scMatch) return scMatch[1].trim();
+  const baseMatch = t.match(/^([^(]+)/);
+  const base = baseMatch ? baseMatch[1].trim() : t;
+  if (!base) return t;
+  const firstParen = t.match(/\(([^)]+)\)/);
+  if (!firstParen) return base;
+  return `${base} (${firstParen[1].trim()})`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORT GENERATION
+// ═══════════════════════════════════════════════════════════════
+function generateReport() {
+  const name = document.getElementById('studentName').value.trim() || 'Student';
+  const rawDate = document.getElementById('dateCompleted').value;
+  const date = rawDate ? new Date(rawDate+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '—';
+  document.getElementById('rName').textContent = name;
+  document.getElementById('rDate').textContent = date;
+  const testLabel = selectedTest === 'D' ? 'Diagnostic' : 'Practice Test ' + selectedTest;
+  document.getElementById('rTest').textContent = 'Lower Level ISEE — ' + testLabel;
+
+  // Timing
+  const timings = {};
+  const sections = getActiveSections(selectedTest);
+  sections.filter(s=>selectedSections.has(s.num)).forEach(sec => {
+    const minEl = document.getElementById('time-min-'+sec.num);
+    const secEl = document.getElementById('time-sec-'+sec.num);
+    const mins = parseInt(minEl && minEl.value) || 0;
+    const secs = parseInt(secEl && secEl.value) || 0;
+    if (mins > 0 || secs > 0) timings[sec.num] = mins * 60 + secs;
+  });
+  const timingLines = sections.filter(s=>selectedSections.has(s.num) && !s.isFeedback && timings[s.num])
+    .map(s => { const t=timings[s.num]; const m=Math.floor(t/60),sc=t%60; return s.label+': '+(m>0?m+'m ':'')+sc+'s'; });
+  const timingMeta = document.getElementById('rTimingMeta');
+  if (timingLines.length) { timingMeta.style.display=''; document.getElementById('rTiming').innerHTML = timingLines.join('<br>'); }
+  else { timingMeta.style.display='none'; }
+
+  const body = document.getElementById('reportBody');
+  body.innerHTML = '';
+
+  sections.filter(s=>selectedSections.has(s.num)).sort((a,b)=>a.num-b.num).forEach(sec => {
+    const key = ANSWER_KEYS[selectedTest] && ANSWER_KEYS[selectedTest][sec.num];
+    if (!key) return;
+
+    // Feedback section: show comfort ratings in report
+    if (key.isFeedback) {
+      const emojis = {1:'😭',2:'😳',3:'😬',4:'🙂',5:'🥳'};
+      const labels = ['Math','Reading','Verbal'];
+      const ratings = studentAnswers['fb'] || {};
+      const fbCard = document.createElement('div');
+      fbCard.className = 'card';
+      fbCard.innerHTML = `
+        <div class="card-title">💬 Diagnostic Feedback — Comfort Ratings</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          ${labels.map((lbl,i) => {
+            const val = ratings[i+1];
+            const emoji = val ? emojis[val] : '—';
+            const descs = ['Very uncomfortable — most material felt new','Not comfortable — much felt new','50/50 — some comfortable, some new','Comfortable — knew most, had some questions','Very comfortable — knew most of the material'];
+            const desc = val ? descs[val-1] : 'Not answered';
+            return `<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;background:var(--cream);border-radius:10px;">
+              <div style="font-size:32px;width:44px;text-align:center;">${emoji}</div>
+              <div><div style="font-weight:600;font-size:15px;color:var(--navy);">${lbl}</div>
+              <div style="font-size:13px;color:var(--grey);margin-top:2px;">${val ? 'Rating: '+val+'/5 — ' : ''}${desc}</div></div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      body.appendChild(fbCard);
+      return;
+    }
+
+    const {answers:correct, topics} = key;
+    const total = correct.length;
+
+    let numCorrect=0, numWrong=0, numSkip=0, attempted=0;
+    const goodTopics={}, weakTopics={};
+
+    for (let q=1; q<=total; q++) {
+      const selId = `${selectedTest}-${sec.num}-${q}`;
+      const sa = studentAnswers[selId] || '';
+      const ca = correct[q-1];
+      const topic = topics[q-1];
+      if (!sa || sa==='') continue;
+      attempted++;
+      if (sa==='skip') { numSkip++; if(!weakTopics[topic])weakTopics[topic]=[]; weakTopics[topic].push(q); }
+      else if (sa===ca) { numCorrect++; if(!goodTopics[topic])goodTopics[topic]=[]; goodTopics[topic].push(q); }
+      else { numWrong++; if(!weakTopics[topic])weakTopics[topic]=[]; weakTopics[topic].push(q); }
+    }
+
+    const rawScore = numCorrect;
+    const goodKeys = Object.keys(goodTopics), weakKeys = Object.keys(weakTopics);
+    const goodHTML = goodKeys.length ? goodKeys.map(t=>`<li><span class="topic-tag">Q${goodTopics[t].join(', Q')}</span> ${fmtTopic(t)}</li>`).join('') : '<li>Keep practicing — you\'ll get here!</li>';
+    const weakHTML = weakKeys.length ? weakKeys.map(t=>`<li><span class="topic-tag">Q${weakTopics[t].join(', Q')}</span> ${fmtTopic(t)}</li>`).join('') : '<li>No major weak areas — great job!</li>';
+    const wrongQNums = [...new Set(Object.values(weakTopics).flat())].sort((a,b)=>a-b);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    let scoreTableRows = '';
+    for (let q=1; q<=total; q++) {
+      const selId = `${selectedTest}-${sec.num}-${q}`;
+      const sa = studentAnswers[selId] || '';
+      const ca = correct[q-1];
+      if (!sa || sa==='') continue;
+      let mark;
+      if (sa==='skip') mark='<span class="skip-mark">— skipped</span>';
+      else if (sa===ca) mark='<span class="correct-mark">✓</span>';
+      else mark=`<span class="wrong-mark">✗ (${sa})</span>`;
+      const studentDisplay = sa!=='skip' ? sa : '—';
+      scoreTableRows += `<tr><td>${q}</td><td>${studentDisplay}</td><td>${ca}</td><td>${mark}</td><td style="font-size:12px;color:var(--grey);">${fmtTopic(topics[q-1])}</td></tr>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-title">${sec.label}</div>
+      <div class="score-summary">
+        <div class="score-pill"><div class="pill-label">Raw Score</div><div class="pill-score">${rawScore}/${attempted}</div><div class="pill-detail">No penalty for wrong</div></div>
+        <div class="score-pill"><div class="pill-label">Percentage</div><div class="pill-score">${attempted>0?Math.round((rawScore/attempted)*100):0}%</div></div>
+        <div class="score-pill"><div class="pill-label">Correct</div><div class="pill-score" style="color:var(--green);">${numCorrect}</div></div>
+        <div class="score-pill"><div class="pill-label">Wrong</div><div class="pill-score" style="color:var(--red);">${numWrong}</div></div>
+        <div class="score-pill"><div class="pill-label">Skipped</div><div class="pill-score" style="color:var(--grey);">${numSkip}</div></div>
+        ${(()=>{const t=timings[sec.num];if(!t)return '';const m=Math.floor(t/60),sc=t%60;return '<div class="score-pill"><div class="pill-label">Time Taken</div><div class="pill-score" style="font-size:22px;color:var(--navy2);">'+(m>0?m+'m ':'')+sc+'s</div><div class="pill-detail">completion time</div></div>';})()}
+      </div>
+
+      <div style="overflow-x:auto;"><table class="score-table">
+        <thead><tr><th>#</th><th>Your Answer</th><th>Correct Answer</th><th>Result</th><th>Topic</th></tr></thead>
+        <tbody>${scoreTableRows}</tbody>
+      </table></div>
+
+      <div class="performance-analysis" style="margin-top:24px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:17px;font-weight:600;color:var(--navy);margin-bottom:12px;">Performance Analysis</div>
+        <div class="feedback-grid">
+          <div class="feedback-box good"><h4>✅ What You Did Well</h4><ul>${goodHTML}</ul></div>
+          <div class="feedback-box improve"><h4>📌 What to Work On</h4><ul>${weakHTML}</ul></div>
+        </div>
+      </div>
+
+      <div class="ai-section" id="ai-section-${sec.num}">
+        <div class="ai-section-header">
+          <div class="ai-icon">💡</div>
+          <div>
+            <h4>Strategy Tips — What to Study</h4>
+            <p>Targeted guidance based on your missed questions</p>
+          </div>
+        </div>
+        <div class="ai-body">
+          <div id="ai-content-${sec.num}"><div class="ai-loading"><div class="spinner"></div>Building your personalized study tips…</div></div>
+        </div>
+      </div>`;
+
+    body.appendChild(card);
+    setTimeout(() => renderSectionTips(sec.num, weakKeys, wrongQNums), 100);
+  });
+
+  document.getElementById('report').style.display='block';
+  document.getElementById('report').scrollIntoView({behavior:'smooth'});
+}
+
+function renderSectionTips(secNum, weakKeys, wrongQNums) {
+  const container = document.getElementById('ai-content-'+secNum);
+  if (!container) return;
+  if (wrongQNums.length === 0) {
+    container.innerHTML = '<div style="color:var(--green);font-size:15px;font-weight:600;padding:12px 0;">🎉 Perfect score on this section! Outstanding work.</div>';
+    return;
+  }
+  if (secNum === 1) renderVerbalTips(container, wrongQNums);
+  else if (secNum === 3) renderReadingTips(container, weakKeys, wrongQNums);
+  else renderMathTips(container, weakKeys, wrongQNums, secNum);
+}
+
+function renderVerbalTips(container, wrongQNums) {
+  const scStart = VR_SC_START[selectedTest] || 18;
+  const synonymWrong = wrongQNums.filter(q => q < scStart);
+  const scWrong = wrongQNums.filter(q => q >= scStart);
+  let html = '';
+
+  if (synonymWrong.length > 0) {
+    const words = synonymWrong.map(q => ({q, ...(VOCAB_DATA[selectedTest]?.[q] || {})})).filter(v=>v.w);
+    if (words.length > 0) {
+      html += `<div style="margin-bottom:26px;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:17px;font-weight:600;color:var(--navy);margin-bottom:6px;">Part 1 — Synonyms: Vocabulary Review</div>
+        <div style="font-size:13px;color:var(--grey);margin-bottom:12px;">📌 Study these ${words.length} word${words.length>1?'s':''} — you missed them on the synonym questions.</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr>
+            <th style="background:var(--brand);color:white;padding:9px 12px;text-align:left;border-radius:8px 0 0 0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Q#</th>
+            <th style="background:var(--brand);color:white;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Word</th>
+            <th style="background:var(--brand);color:white;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Definition</th>
+            <th style="background:var(--brand);color:white;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Synonyms</th>
+            <th style="background:var(--brand);color:white;padding:9px 12px;text-align:left;border-radius:0 8px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Example</th>
+          </tr></thead>
+          <tbody>
+            ${words.map((v,i)=>`<tr style="${i%2===1?'background:#f7f9fb':''}">
+              <td style="padding:9px 12px;border-bottom:1px solid var(--cream2);font-weight:700;color:var(--grey);">${v.q}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid var(--cream2);font-weight:700;color:var(--navy);white-space:nowrap;">${v.w}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid var(--cream2);color:var(--navy2);">${v.d}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid var(--cream2);color:var(--green);font-weight:600;">${v.s}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid var(--cream2);color:var(--grey);font-style:italic;">${v.e}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }
+  }
+
+  if (scWrong.length > 0) {
+    html += `<div>
+      <div style="font-family:'Libre Baskerville',serif;font-size:17px;font-weight:600;color:var(--navy);margin-bottom:6px;">Part 2 — Sentence Completion: Why the Correct Answer Fits</div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:14px;">For each question you missed, here is the sentence and an explanation of why the correct word completes it.</div>`;
+    scWrong.forEach(q => {
+      const entry = SC_DATA[selectedTest]?.[q];
+      if (!entry) return;
+      html += `<div style="background:var(--white);border:1.5px solid var(--cream2);border-radius:12px;padding:16px 18px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--cream2);">
+          <span style="font-size:11px;font-weight:700;background:var(--brand);color:var(--white);border-radius:4px;padding:2px 8px;white-space:nowrap;">Q${q}</span>
+          <span style="font-size:13px;font-style:italic;color:var(--grey);">${entry.sentence}</span>
+        </div>
+        <div style="font-size:13px;color:var(--navy2);margin-bottom:6px;"><strong>Correct answer:</strong> ${entry.correct}</div>
+        <div style="font-size:13px;color:var(--navy2);line-height:1.65;">${entry.why}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html || '<p style="font-size:13px;color:var(--grey);">No verbal items to display.</p>';
+}
+
+function renderReadingTips(container, weakKeys, wrongQNums) {
+  const bySkill = {};
+  wrongQNums.forEach(q => {
+    const qData = READING_QS[selectedTest]?.[q];
+    if (!qData) return;
+    if (!bySkill[qData.skill]) bySkill[qData.skill] = [];
+    bySkill[qData.skill].push({q, ...qData});
+  });
+  const skills = Object.keys(bySkill);
+  if (skills.length === 0) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--grey);">Review the passages in your test booklet for these questions.</p>';
+    return;
+  }
+  let html = `<div style="font-size:13px;color:var(--grey);margin-bottom:16px;">For each reading skill you missed, here is the general strategy followed by a specific explanation for your exact questions:</div>`;
+  skills.forEach(skill => {
+    const strat = SKILL_STRATEGIES[skill] || {icon:"📖",tips:["Re-read the passage carefully before answering.","Eliminate clearly wrong choices first.","Base your answer only on what the passage states or implies."]};
+    const questions = bySkill[skill];
+    html += `<div style="background:var(--white);border:1.5px solid var(--cream2);border-radius:12px;padding:18px 20px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--cream2);">
+        <div style="width:34px;height:34px;background:var(--brand);color:var(--white);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${strat.icon}</div>
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:600;color:var(--navy);">${skill}</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">General Strategy</div>
+        <ul style="list-style:none;padding:0;margin:0;">
+          ${strat.tips.map(t=>`<li style="padding:6px 0;border-bottom:1px solid var(--cream2);font-size:13px;color:var(--navy2);line-height:1.6;padding-left:14px;position:relative;"><span style="position:absolute;left:0;color:var(--brand);font-weight:700;">•</span>${t}</li>`).join('')}
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--grey);margin-bottom:8px;">Your Questions — Why the Correct Answer is Right</div>
+        ${questions.map(qd=>`<div style="background:var(--cream);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:11px;font-weight:700;background:var(--brand);color:var(--white);border-radius:4px;padding:2px 8px;white-space:nowrap;">Q${qd.q}</span>
+            <span style="font-size:12px;color:var(--grey);font-style:italic;">${qd.passage}</span>
+          </div>
+          <div style="font-size:13px;color:var(--navy2);margin-bottom:4px;"><strong>Correct answer:</strong> ${qd.correct}</div>
+          <div style="font-size:13px;color:var(--navy2);line-height:1.65;">${qd.why}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderMathTips(container, weakKeys, wrongQNums, secNum) {
+  let html = `<div style="font-size:13px;color:var(--grey);margin-bottom:16px;">Study the concepts below — these match the topics you missed.</div>`;
+
+  weakKeys.forEach(topic => {
+    const card = findConceptCard(topic);
+    const topicLabel = fmtTopic(topic);
+    html += `<div style="background:var(--white);border:1.5px solid var(--cream2);border-radius:12px;padding:16px 18px;margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--cream2);">${topicLabel}</div>`;
+    if (card) {
+      html += `<ul style="list-style:none;padding:0;margin:0;">
+        <li style="font-size:13px;color:var(--navy2);line-height:1.7;padding:5px 0 5px 18px;position:relative;border-bottom:1px solid var(--cream2);"><span style="position:absolute;left:0;color:var(--brand);font-weight:700;">•</span><strong>Key Facts:</strong> ${card.facts}</li>
+        <li style="font-size:13px;color:var(--navy2);line-height:1.7;padding:5px 0 5px 18px;position:relative;border-bottom:1px solid var(--cream2);"><span style="position:absolute;left:0;color:var(--brand);font-weight:700;">•</span><strong>Strategy:</strong> ${card.tips}</li>
+        ${card.ex ? `<li style="font-size:13px;color:var(--navy2);line-height:1.7;padding:5px 0 5px 18px;position:relative;"><span style="position:absolute;left:0;color:var(--brand);font-weight:700;">•</span><strong>Example:</strong> ${card.ex}</li>` : ''}
+      </ul>`;
+    } else {
+      html += `<div style="font-size:13px;color:var(--grey);">Review this topic with your teacher or in your textbook. Practice similar problems to build confidence.</div>`;
+    }
+    html += `</div>`;
+  });
+
+  if (!html.includes('border-radius:12px')) {
+    html = '<p style="font-size:13px;color:var(--grey);">Review the questions you missed in your test booklet.</p>';
+  }
+  container.innerHTML = html;
+}
+
+async function downloadPDF(){
+  const btn = document.querySelector('.btn-gold');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML='⏳ Generating PDF…'; btn.disabled=true; }
+  try {
+    const {jsPDF} = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgW = pw - margin*2;
+
+    function addFooter(){
+      pdf.setFontSize(8); pdf.setTextColor(180,170,160);
+      pdf.text('Wildewood Education Group LLC', pw/2, ph-4, {align:'center'});
+      pdf.setTextColor(0,0,0);
+    }
+
+    const reportEl = document.getElementById('report');
+    const reportClone = reportEl.cloneNode(true);
+    reportClone.querySelectorAll('.no-print').forEach(el=>el.remove());
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;background:#f7f6fb;';
+    wrapper.appendChild(reportClone);
+    document.body.appendChild(wrapper);
+
+    const RENDER_SCALE = 1.8;
+    const cloneBody = reportClone.querySelector('#reportBody');
+    const cloneCards = cloneBody ? cloneBody.querySelectorAll('.card') : [];
+    const cloneTop = reportClone.getBoundingClientRect().top;
+    const breakPixels = [];
+    cloneCards.forEach((card,i) => {
+      if (i>0) { const top = card.getBoundingClientRect().top - cloneTop; breakPixels.push(Math.round(top*RENDER_SCALE)); }
+      const aiEl = card.querySelector('.ai-section');
+      if (aiEl) { const top = aiEl.getBoundingClientRect().top - cloneTop; breakPixels.push(Math.round(top*RENDER_SCALE)); }
+    });
+    breakPixels.sort((a,b)=>a-b);
+
+    const fullCanvas = await html2canvas(wrapper, {scale:RENDER_SCALE,useCORS:true,backgroundColor:'#f7f6fb',width:900});
+    document.body.removeChild(wrapper);
+
+    const sliceStarts = [0,...breakPixels];
+    const sliceEnds = [...breakPixels,fullCanvas.height];
+
+    sliceStarts.forEach((startY,i) => {
+      const sliceCanvasH = sliceEnds[i]-startY;
+      if (sliceCanvasH<=0) return;
+      const sliceImgH = (sliceCanvasH*imgW)/fullCanvas.width;
+      let yOff=0, rem=sliceImgH, pageFirst=(i===0);
+      while(rem>0){
+        const sh = Math.min(ph-margin*2, rem);
+        const cp = document.createElement('canvas');
+        cp.width = fullCanvas.width;
+        cp.height = Math.max(1,Math.round((sh/sliceImgH)*sliceCanvasH));
+        cp.getContext('2d').drawImage(fullCanvas,0,startY+Math.round((yOff/sliceImgH)*sliceCanvasH),fullCanvas.width,cp.height,0,0,fullCanvas.width,cp.height);
+        if(!pageFirst){addFooter();pdf.addPage();}
+        pdf.addImage(cp.toDataURL('image/jpeg',0.92),'JPEG',margin,margin,imgW,sh);
+        yOff+=sh; rem-=sh; pageFirst=false;
+      }
+    });
+
+    addFooter();
+    const name = document.getElementById('studentName').value.trim().replace(/\s+/g,'_')||'Student';
+    pdf.save(`ISEE_LL_Report_${name}_Test${selectedTest}.pdf`);
+
+  } catch(err) {
+    alert('PDF generation failed: '+err.message+'. Try Print → Save as PDF instead.');
+    console.error(err);
+  } finally {
+    if(btn){btn.innerHTML=origText;btn.disabled=false;}
+  }
+}
+
+function resetAll() {
+  selectedTest = null;
+  selectedSections = new Set();
+  studentAnswers = {};
+  document.getElementById('studentName').value = '';
+  document.getElementById('dateCompleted').value = '';
+  document.querySelectorAll('.test-btn').forEach(b => { if (!b.classList.contains('disabled-btn')) b.classList.remove('selected'); });
+  ['step3','step4'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById('report').style.display='none';
+  document.getElementById('reportBody').innerHTML='';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
